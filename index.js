@@ -16,17 +16,8 @@ var cityToSpriteMap = {
     3:"mine"
 }
 
-var config = {
-    apiKey: "AIzaSyCtMLkPCbgRLUUkY9r4zjFe5djwMqoUrN0",
-    authDomain: "discord-dominions.firebaseapp.com",
-    databaseURL: "https://discord-dominions.firebaseio.com",
-    projectId: "discord-dominions",
-    storageBucket: "discord-dominions.appspot.com",
-    messagingSenderId: "802474753316"
-};
-
 var version = "0.0.1"
-firebase.initializeApp(config);
+firebase.initializeApp(credentials.database);
 
 function getDominionName(id){
     return client.guilds.get(id).name
