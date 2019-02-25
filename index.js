@@ -28,6 +28,9 @@ var config = {
 var version = "0.0.1"
 firebase.initializeApp(config);
 
+function getDominionName(id){
+    return client.guilds.get(id).name
+}
 
 function updatePlayer(newData,callback){
     var playerData = firebase.database().ref("players/" + newData.id);
@@ -140,6 +143,7 @@ function createPlayer(user){
             lastAction:now.getTime(),
             resources:{
                 coal:0,
+                iron:0,
                 ironOre:0,
                 stone:0,
                 crystals:0,
@@ -204,12 +208,76 @@ function createDominion(guild,user,channelID){
             resources:{
                 villagerPopulation:0,
                 coal:0,
+                gold:0,
                 stone:0,
                 iron:0,
                 crystals:0,
                 food:0,
                 lumber:0,
                 housing:0
+            },
+            trading:{
+                active:false,
+                buying:{
+                    coal:{
+                        wanted:0,
+                        payPer:0
+                    },
+                    stone:{
+                        wanted:0,
+                        payPer:0
+                    },
+                    iron:{
+                        wanted:0,
+                        payPer:0
+                    },
+                    crystals:{
+                        wanted:0,
+                        payPer:0
+                    },
+                    food:{
+                        wanted:0,
+                        payPer:0
+                    },
+                    lumber:{
+                        wanted:0,
+                        payPer:0
+                    },
+                    housing:{
+                        wanted:0,
+                        payPer:0
+                    }
+                },
+                selling:{
+                    coal:{
+                        offered:0,
+                        payPer:0
+                    },
+                    stone:{
+                        offered:0,
+                        payPer:0
+                    },
+                    iron:{
+                        offered:0,
+                        payPer:0
+                    },
+                    crystals:{
+                        offered:0,
+                        payPer:0
+                    },
+                    food:{
+                        offered:0,
+                        payPer:0
+                    },
+                    lumber:{
+                        offered:0,
+                        payPer:0
+                    },
+                    housing:{
+                        offered:0,
+                        payPer:0
+                    }
+                }
             },
             city:[
                 [0,0,0,0,0,0,0,0,0],
@@ -343,6 +411,9 @@ client.on('message', message => {
                                                 var currentCapacity  = 0
                                                 for(var type in player.resources){
                                                     currentCapacity += player.resources[type]
+                                                    if(type == "iron"){
+                                                        currentCapacity += player.resources[type]
+                                                    }
                                                 }
                                                 if(currentCapacity + maximumYield <= player.storageCapacity){
                                                     var resourceYield = yieldMaps[action]
@@ -381,14 +452,61 @@ client.on('message', message => {
                                             outputEmbed(message.channel,embed,player)
                                         }
                                     } else {
-                                        var validParameters = ""
-                                        for(var paremeter in actionMap){
-                                            validParameters += paremeter + "  "
-                                        }
-                                        embed.addField("Invalid Use  of Command","Usage: +gather (" + validParameters + ")\nExample: +gather minerals")
-                                        outputEmbed(message.channel,embed,player)
+                                        
                                     }
                                     break;
+                                case prefix + "give":
+                                    if(input.length == 3){
+                                        var resources = ["coal","stone","iron","food","crystals","lumber"]
+                                        if(resources.includes(input[1])){
+                                            if(!isNaN(parseInt(input[2]))){
+                                                if(player[input[1]] >= parseInt(input[2])){
+                                                    var transactionMessage = player.name + " will be giving " + input[2] + " " + input[1] + " to the dominion of " + getDominionName(dominion.id)
+                                                    var sale = 0
+                                                    if(dominion.trading.active){
+                                                        sale = dominion.trading.buying[input[1]] * parseInt(input[2])
+                                                        if(dominion.gold >= sale){
+                                                            if(dominion.trading.buying[input[1]].wanted <= parseInt(input[2]) || dominion.trading.buying[input[1]].wanted == -1){
+                                                                transactionMessage += "\n\nThe dominion of " + getDominionName(dominion.id) + " will pay " + sale + " gold for " + dominion.trading.buying[input[1]].wanted + " of the incoming " + input[1]
+                                                            } else {
+                                                                transactionMessage += "\n\nThe dominion of " + getDominionName(dominion.id) + " will pay " + sale + " gold for " + input[2] + " " + input[1]
+                                                            }
+                                                        }
+                                                    }
+                                                    player.confirming = {
+                                                        type:"give",
+                                                        amount:parseInt(input[2]),
+                                                        resource:input[1],
+                                                        destination:dominion.id,
+                                                        donator:player.id,
+                                                        repayment:sale
+                                                    }
+                                                    embed.addField("Giving Resources",transactionMessage)
+                                                    embed.addField("Confirmation",player.name + " must type +yes to confirm this action");      
+                                                } else {
+                                                    embed.addField("Not Enough of Resource",player.name + " does not have " + input[2] + " " + input[1] + " to give")
+                                                    outputEmbed(message.channel,embed,player) 
+                                                }
+                                            } else {
+                                                embed.addField("Invalid Resource Amount",input[2] + " is not a valid amount of a resource to give. Please use numbers to determine how much of a resource you would like to give")
+                                                outputEmbed(message.channel,embed,player)
+                                            }
+                                        } else {
+                                            var validResources = ""
+                                            for(var resource of resources){
+                                                validResources += "(" + resource + ")\n"
+                                            }
+                                            embed.addField("Invalid Resource",input[1] + " is not a valid resource to give. Valid resources to give are:\n" + validResources)
+                                            outputEmbed(message.channel,embed,player)
+                                        }
+                                    } else {
+                                        var validParameters = ""
+                                        for(var paremeter of ["coal","stone","iron","food","crystals","lumber"]){
+                                            validParameters += paremeter + "  "
+                                        }
+                                        embed.addField("Invalid Use of Command","Usage: +give (" + validParameters + ")\nExample: +give stone")
+                                        outputEmbed(message.channel,embed,player)
+                                    }                        
                             }   
                         } else {
                             if(dominion == null){
