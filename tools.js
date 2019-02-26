@@ -29,7 +29,7 @@ function createPlayer(user){
                 lumber:0,
                 gold:0
             },
-            storageCapacity:200,
+            storageCapacity:100,
             followers:0,
             toolLevel:{
                 fighting:1,
@@ -47,7 +47,6 @@ function createPlayer(user){
             },
             energy:10,
             energyCap:10,
-            dominions:[],
             dob:now.getTime(),
             prefix:"+"
         }
@@ -91,6 +90,30 @@ module.exports = {
             callback(dominionSnapshot.val())
         })
     },
+    deleteDominion: function (id,callback){
+        var data = firebase.database().ref("dominions/");
+        data.once('value').then(function(snapshot) {
+            snapshot.forEach(function(child) {
+                if(child.val().id == id){
+                    child.ref.remove();
+                    callback()
+                }
+            })
+            
+        })
+    },
+    deletePlayer: function (id,callback){
+        var data = firebase.database().ref("players/");
+        data.once('value').then(function(snapshot) {
+            snapshot.forEach(function(child) {
+                if(child.val().id == id){
+                    child.ref.remove();
+                    callback()
+                }
+            })
+            
+        })
+    },
     getRandom: function (min,max){
         return (Math.random() * (max - min)) + min
     },
@@ -123,9 +146,24 @@ module.exports = {
             callback(embed)
         })
     },
+    drawDominion: function(dominion,channel,embed,callback){
+        var date = new Date(dominion.dob)
+        embed.setTitle(this.getDominionName(dominion.id))
+        embed.addField("Date Created:",date.toString(),true)
+        embed.addField("Villager Population: ",dominion.villagerPopulation,true)
+        var resources = ""
+        var resourceCount = 0
+        for(var type in dominion.resources){
+            resources += type.capitalize() + ": " + dominion.resources[type] + "\n"
+            resourceCount += dominion.resources[type]
+        }
+        embed.addField("Resources (" + resourceCount + " / " + dominion.storageCapacity + "):" ,resources,true)
+        embed.setThumbnail(channel.guild.splashURL)
+        callback(embed)
+    },
     drawCity: function (dominion,channel,embed,callback){
         var out = fs.createWriteStream("./cities/" + dominion.id + '.jpg')
-        var canvas = createCanvas(144, 144)
+        var canvas = createCanvas(258, 258)
         const ctx = canvas.getContext('2d')
         var stream = canvas.pngStream();
         var sprites = {}                
@@ -137,7 +175,7 @@ module.exports = {
             }
             for (let i = 0; i < 9; i++) {
                 for (let j = 0; j < 9; j++) {
-                    ctx.drawImage(sprites[cityToSpriteMap[dominion.city[i][j]]],i*16,j*16)
+                    ctx.drawImage(sprites[cityToSpriteMap[dominion.city[i][j]]],i*32,j*32)
                 }   
             }
                     
@@ -178,14 +216,14 @@ module.exports = {
                     fighting:1,
                     mining:1,
                     lumberjacking:1,
-                    building:1,
+                    construction:1,
                     farming:0
                 },
                 toolDurability:{
                     fighting:-1,
                     mining:-1,
                     lumberjacking:-1,
-                    building:-1,
+                    construction:-1,
                     farming:-1
                 },
                 energy:10,
@@ -198,8 +236,42 @@ module.exports = {
         })
     },
     outputEmbed: function (channel,embed){
-        embed.setColor([114,137,218])
+        if(!embed.color){
+            embed.setColor([114,137,218])
+        }
         channel.send("",embed)
+    },
+    cityHasStructure: function(dominion,structureID){
+        for(var row in dominion.city){
+            if(dominion.city[row].includes(structureID)){
+                return true
+            }
+        }
+        return false
+    },
+    dominionAuthorization: function(auth,message,player,dominion,embed){
+        var authorized = false;
+        for(var role of message.guild.members.get(player.id).roles.array()){
+            for(var roleType in dominion.roles){
+                if(dominion.roles[roleType].id == role.id){
+                    if(dominion.roles[roleType].permissions.master || dominion.roles[roleType].permissions[auth]){
+                        authorized = true
+                        break;
+                    }
+                }
+            }
+            if(authorized){
+                break;
+            }
+        }
+        if(authorized){
+            return authorized
+        } else {
+            embed.setColor([255,0,0])
+            embed.addField("Invalid Authorization",player.name + " is not authorized for this action")
+            this.outputEmbed(message.channel,embed,player)
+            return false
+        }
     },
     createDominion: function (guild,user,channelID){
         var playerData = firebase.database().ref("players/" + user.id);
@@ -211,8 +283,8 @@ module.exports = {
                 color:[255,189,27] 
             }).then(role => {
                 var newDominion = {
-                    resources:{
-                        villagerPopulation:0,
+                    villagerPopulation:0,
+                    resources:{     
                         coal:0,
                         gold:0,
                         stone:0,
@@ -304,7 +376,7 @@ module.exports = {
                         [0,0,0,0,0,0,0,0,0],
                         [0,0,0,0,0,0,0,0,0]
                     ],
-                    storageCapacity:2000,
+                    storageCapacity:500,
                     military:[0,0,0,0,0,0,0,0,0,0],
                     id:guild.id,
                     owner:user.id,
