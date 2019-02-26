@@ -12,7 +12,7 @@ module.exports = {
                 destination:dominion.id
             }
             embed.addField("Dominion Deletion Request",player.name + " will delete the dominion " + tools.getDominionName(dominion.id))
-            embed.addField("Confirmation",player.name + " must type +yes to confirm this action"); 
+            embed.addField("Confirmation",player.name + " must type +yes to confirm this action or +no to decline"); 
             tools.updatePlayer(player,function(){
                 tools.outputEmbed(message.channel,embed,player)     
             })

@@ -97,7 +97,7 @@ module.exports = {
                                     durability:toolMap[input[1]].rank[input[2]].durability
                                 }
                                 embed.addField("Crafting Request",player.name + " will craft rank " + player.confirming.rank + " " + player.confirming.action + " gear")
-                                embed.addField("Confirmation",player.name + " must type +yes to confirm this action"); 
+                                embed.addField("Confirmation",player.name + " must type +yes to confirm this action or +no to decline"); 
                                 tools.updatePlayer(player,function(){
                                     tools.outputEmbed(message.channel,embed,player)     
                                 })

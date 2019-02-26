@@ -26,7 +26,7 @@ module.exports = {
                     for(var resource in dominion.resources){
                         dominionCurrentStorage += dominion.resources[resource]
                     }
-                    if(dominionCurrentStorage + parseInt(input[2]) <= dominion.storageCapacity){
+                    if(dominionCurrentStorage + parseInt(input[2]) <= tools.getDominionStorage(dominion)){
                         player.confirming = {
                             type:"give",
                             amount:parseInt(input[2]),
@@ -36,7 +36,7 @@ module.exports = {
                             repayment:sale
                         }
                         embed.addField("Giving Resources",transactionMessage)
-                        embed.addField("Confirmation",player.name + " must type +yes to confirm this action"); 
+                        embed.addField("Confirmation",player.name + " must type +yes to confirm this action or +no to decline"); 
                         tools.updatePlayer(player,function(){
                             tools.outputEmbed(message.channel,embed,player)     
                         })

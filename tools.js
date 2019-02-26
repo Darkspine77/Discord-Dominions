@@ -8,7 +8,9 @@ var cityToSpriteMap = {
     5:"tradingpost",
     6:"farm",
     7:"furnacehouse",
-    8:"storage"
+    8:"storage",
+    9:"housing",
+    10:"warehouse"
 }
 
 function createPlayer(user){
@@ -31,20 +33,10 @@ function createPlayer(user){
             },
             storageCapacity:100,
             followers:0,
-            toolLevel:{
-                fighting:1,
-                mining:1,
-                lumberjacking:1,
-                building:1,
-                farming:0
-            },
-            toolDurability:{
-                fighting:-1,
-                mining:-1,
-                lumberjacking:-1,
-                building:-1,
-                farming:-1
-            },
+            maxGear:5,
+            gear:["mining","lumberjacking","construction"],
+            toolLevel:[1,1,1],
+            toolDurability:[-1,-1,-1],
             energy:10,
             energyCap:10,
             dob:now.getTime(),
@@ -90,6 +82,12 @@ module.exports = {
             callback(dominionSnapshot.val())
         })
     },
+    getAllDominionsSnap: function(callback){
+        var data = firebase.database().ref("dominions/");
+        data.once('value').then(function(snapshot) {
+            callback(snapshot)
+        })
+    },
     deleteDominion: function (id,callback){
         var data = firebase.database().ref("dominions/");
         data.once('value').then(function(snapshot) {
@@ -124,16 +122,16 @@ module.exports = {
             embed.addField("Date Started:",date.toString(),true)
             embed.addField("Energy:",player.energy + " / " + player.energyCap,false)
             embed.addField("Followers:",player.followers,true)
-            for(var skill in player.toolLevel){
-                var durability = player.toolDurability[skill]
+            for(var gearIndex in player.gear){
+                var durability = player.toolDurability[gearIndex]
                 if(durability == -1){
                     durability = "Infinite"
                 }
-                var rank = player.toolLevel[skill]
+                var rank = player.toolLevel[gearIndex]
                 if(rank == 0){
                     rank = "None"
                 }
-                embed.addField(skill.capitalize() + ":","Rank: " + rank + "\nDurability: " + durability,true)
+                embed.addField(player.gear[gearIndex].capitalize() + ":","Rank: " + rank + "\nDurability: " + durability,true)
             }
             var resources = ""
             var resourceCount = 0
@@ -146,24 +144,53 @@ module.exports = {
             callback(embed)
         })
     },
+    getDominionStorage: function(dominion){
+        var storage = 0
+        for(var x in dominion.city){
+            for(var y in dominion.city[x]){
+                if(dominion.city[x][y] == 8){
+                    storage += 200
+                }
+                if(dominion.city[x][y] == 1){
+                    storage += 500
+                }
+            } 
+        }
+        return storage
+    },
+    getDominionCapacity: function(dominion){
+        var capacity = 0
+        for(var x in dominion.city){
+            for(var y in dominion.city[x]){
+                if(dominion.city[x][y] == 1){
+                    capacity += 5
+                }
+                if(dominion.city[x][y] == 9){
+                    capacity += 10
+                }
+            } 
+        }
+        return capacity
+    },
     drawDominion: function(dominion,channel,embed,callback){
         var date = new Date(dominion.dob)
+        var housing = 0
         embed.setTitle(this.getDominionName(dominion.id))
         embed.addField("Date Created:",date.toString(),true)
-        embed.addField("Villager Population: ",dominion.villagerPopulation,true)
+        embed.addField("Villager Population: ",dominion.villagerPopulation + "/" + this.getDominionCapacity(dominion),true)
         var resources = ""
         var resourceCount = 0
         for(var type in dominion.resources){
             resources += type.capitalize() + ": " + dominion.resources[type] + "\n"
             resourceCount += dominion.resources[type]
         }
-        embed.addField("Resources (" + resourceCount + " / " + dominion.storageCapacity + "):" ,resources,true)
+        embed.addField("Resources (" + resourceCount + " / " + this.getDominionStorage(dominion) + "):" ,resources,true)
         embed.setThumbnail(channel.guild.splashURL)
         callback(embed)
     },
     drawCity: function (dominion,channel,embed,callback){
         var out = fs.createWriteStream("./cities/" + dominion.id + '.jpg')
-        var canvas = createCanvas(258, 258)
+        var canvas = createCanvas(290, 290)
         const ctx = canvas.getContext('2d')
         var stream = canvas.pngStream();
         var sprites = {}                
@@ -177,8 +204,16 @@ module.exports = {
                 for (let j = 0; j < 9; j++) {
                     ctx.drawImage(sprites[cityToSpriteMap[dominion.city[i][j]]],i*32,j*32)
                 }   
-            }
-                    
+            }    
+            ctx.beginPath()  
+            for (let i = 0; i < 9; i++) {
+                ctx.moveTo(0,i*32)
+                ctx.lineTo(290,i*32)   
+                ctx.stroke();
+                ctx.moveTo(i*32,0)
+                ctx.lineTo(i*32,290)   
+                ctx.stroke();             
+            }            
             stream.on('data', function(chunk){
                 out.write(chunk);
               });
@@ -192,48 +227,8 @@ module.exports = {
               });
         })
     },
-    createPlayer: function (user){
-        var playerData = firebase.database().ref("players/" + user.id);
-        playerData.once('value').then(function(playerSnapshot) {
-            var now = new Date();
-            var newPlayer = {
-                name:user.username,
-                id:user.id,
-                lastAction:now.getTime(),
-                resources:{
-                    coal:0,
-                    iron:0,
-                    gold:0,
-                    ironOre:0,
-                    stone:0,
-                    crystals:0,
-                    food:0,
-                    lumber:0
-                },
-                storageCapacity:200,
-                followers:0,
-                toolLevel:{
-                    fighting:1,
-                    mining:1,
-                    lumberjacking:1,
-                    construction:1,
-                    farming:0
-                },
-                toolDurability:{
-                    fighting:-1,
-                    mining:-1,
-                    lumberjacking:-1,
-                    construction:-1,
-                    farming:-1
-                },
-                energy:10,
-                energyCap:10,
-                dominions:[],
-                dob:now.getTime(),
-                prefix:"+"
-            }
-            playerData.update(newPlayer)
-        })
+    createPlayer: function(user){
+        createPlayer(user)
     },
     outputEmbed: function (channel,embed){
         if(!embed.color){
@@ -292,7 +287,7 @@ module.exports = {
                         crystals:0,
                         food:0,
                         lumber:0,
-                        housing:0
+                        
                     },
                     roles:{
                         leader:{
@@ -328,10 +323,6 @@ module.exports = {
                             lumber:{
                                 wanted:0,
                                 payPer:0
-                            },
-                            housing:{
-                                wanted:0,
-                                payPer:0
                             }
                         },
                         selling:{
@@ -358,10 +349,6 @@ module.exports = {
                             lumber:{
                                 offered:0,
                                 payPer:0
-                            },
-                            housing:{
-                                offered:0,
-                                payPer:0
                             }
                         }
                     },
@@ -376,7 +363,17 @@ module.exports = {
                         [0,0,0,0,0,0,0,0,0],
                         [0,0,0,0,0,0,0,0,0]
                     ],
-                    storageCapacity:500,
+                    cityHealth:[
+                        [0,0,0,0,0,0,0,0,0],
+                        [0,0,0,0,0,0,0,0,0],
+                        [0,0,0,0,0,0,0,0,0],
+                        [0,0,0,0,0,0,0,0,0],
+                        [0,0,0,0,10,0,0,0,0],
+                        [0,0,0,0,0,0,0,0,0],
+                        [0,0,0,0,0,0,0,0,0],
+                        [0,0,0,0,0,0,0,0,0],
+                        [0,0,0,0,0,0,0,0,0]
+                    ],
                     military:[0,0,0,0,0,0,0,0,0,0],
                     id:guild.id,
                     owner:user.id,

@@ -7,27 +7,7 @@ module.exports = {
     legalParameterCount:[5],
     run: function(tools,input,dominion,player,message,embed){
         var authorized = false;
-        for(var role of message.guild.members.get(player.id).roles.array()){
-            for(var roleType in dominion.roles){
-                if(dominion.roles[roleType].id == role.id){
-                    if(dominion.roles[roleType].permissions.master || dominion.roles[roleType].permissions.canMakeRole){
-                        if(input[1] != "leader"){
-                            authorized = true
-                            break;
-                        } else {
-                            authorized = dominion.roles[roleType].permissions.master
-                            if(authorized){
-                                break;
-                            }
-                        }  
-                    }
-                }
-            }
-            if(authorized){
-                break;
-            }
-        }
-        if(authorized){
+        if(tools.dominionAuthorization("canMakeRole",message,player,dominion,embed)){
             if(dominion.roles[input[1]] == undefined){
                 if(!isNaN(parseInt(input[2])) && parseInt(input[2]) >= 0 && parseInt(input[2]) <= 255){
                     if(!isNaN(parseInt(input[3])) && parseInt(input[3]) >= 0 && parseInt(input[3]) <= 255){
@@ -73,10 +53,6 @@ module.exports = {
                 embed.addField("Role Already Present","A role with the name (" + input[1] + ") already exists")
                 tools.outputEmbed(message.channel,embed,player)
             }
-        } else {
-            embed.setColor([255,0,0])
-            embed.addField("Invalid Authorization",player.name + " is not authorized for this action")
-            tools.outputEmbed(message.channel,embed,player)
         }
     }
 }

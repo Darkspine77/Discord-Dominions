@@ -17,13 +17,17 @@ module.exports = {
                             resourceCount += player.resources[type]
                         }
                         if(resourceCount + parseInt(input[2]) <= player.storageCapacity){
-                            player.resources[input[1]] += parseInt(input[2])
-                            dominion.resources[input[1]] -= parseInt(input[2])
+                            player.confirming = {
+                                type:"take",
+                                amount:parseInt(input[2]),
+                                resource:input[1],
+                                destination:player.id,
+                                donator:dominion.id,
+                            }
+                            embed.addField("Taking Resources",player.name + " will be taking " + input[2] + " " + input[1] + " from the dominion of " + tools.getDominionName(dominion.id))
+                            embed.addField("Confirmation",player.name + " must type +yes to confirm this action or +no to decline"); 
                             tools.updatePlayer(player,function(){
-                                tools.updateDominion(dominion,function(){
-                                    embed.addField("Successful Resource Withdrawal",player.name + " took " + input[2] + " " + input[1] + " from " + tools.getDominionName(dominion.id))
-                                    tools.outputEmbed(message.channel,embed,player)     
-                                })
+                                tools.outputEmbed(message.channel,embed,player)     
                             })
                         } else {
                             embed.setColor([255,0,0])

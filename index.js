@@ -2,6 +2,7 @@ const Discord = require("discord.js");
 const firebase = require("firebase");
 const credentials = require("./credentials.json")
 const tools = require("./tools.js")
+const prettyms = require("pretty-ms")
 const client = new Discord.Client();
 const fs = require("fs")
 let commands = {};
@@ -109,11 +110,15 @@ client.on('message', message => {
                                                 player.energy = player.energyCap
                                             }
                                             tools.updatePlayer(player,function(){
-                                                embed.setFooter("Discord Dominions v" + version + " by Darkspine77#1365 ⚡" + player.name + " now has (" + player.energy + " / " + player.energyCap + ") energy!⚡")
+                                                embed.setFooter("Discord Dominions v" + version + "| Energy: ⚡(" + player.energy + " / " + player.energyCap + ")⚡")
                                                 command.run(tools,input,dominion,player,message,embed)
                                             })
                                         } else {
-                                            embed.setFooter("Discord Dominions v" + version + " by Darkspine77#1365")
+                                            if(player.energy != player.energyCap){
+                                                embed.setFooter("Discord Dominions v" + version + "| Energy: (" + player.energy + " / " + player.energyCap + ") Recharges in " + prettyms(300000 - (now.getTime() - player.lastAction)) + "...")
+                                            } else {
+                                                embed.setFooter("Discord Dominions v" + version + "| Energy: (" + player.energy + " / " + player.energyCap + ")")
+                                            }
                                             command.run(tools,input,dominion,player,message,embed)
                                         }
                                     } else {
