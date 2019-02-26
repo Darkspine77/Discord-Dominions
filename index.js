@@ -1,300 +1,69 @@
 const Discord = require("discord.js");
 const firebase = require("firebase");
 const credentials = require("./credentials.json")
-const { createCanvas, loadImage, Image } = require('canvas')
+const tools = require("./tools.js")
 const client = new Discord.Client();
 const fs = require("fs")
+let commands = {};
+fs.readdir("./commands", function(err, items) {
+    for(var command of items){
+        commands[command.split(".js")[0]] = require("./commands/" + command)
+    }
+});
+
 
 String.prototype.capitalize = function() {
     return this.charAt(0).toUpperCase() + this.slice(1);
 }
 
-var cityToSpriteMap = {
-    0:"grass",
-    1:"capital",
-    2:"lumberyard",
-    3:"mine"
-}
-
 var version = "0.0.1"
 firebase.initializeApp(credentials.database);
-
-function getDominionName(id){
-    return client.guilds.get(id).name
-}
-
-function updatePlayer(newData,callback){
-    var playerData = firebase.database().ref("players/" + newData.id);
-    playerData.update(newData)
-    callback(newData)
-}
-
-function getPlayer(id,callback){
-    var playerData = firebase.database().ref("players/" + id);
-    playerData.once('value').then(function(playerSnapshot) {
-        callback(playerSnapshot.val())
-    })
-}
-
-function updateDominion(newData,callback){
-    var dominionData = firebase.database().ref("dominions/" + newData.id);
-    dominionData.update(newData)
-    callback(newData)
-}
-
-function getDominion(id,callback){
-    var dominionData = firebase.database().ref("dominions/" + id);
-    dominionData.once('value').then(function(dominionSnapshot) {
-        callback(dominionSnapshot.val())
-    })
-}
 
 client.login(credentials.token)
 
 client.on('ready', () => {
+    tools.initialize(firebase,client,version,fs)
+    tools.tools = tools
 	console.log("Starting Dominions v" + version + " ... on shard #" + (client.shard.id + 1))
 	setInterval(function(){
 		client.user.setPresence({game:{name:"Discord Dominions v" + version}})
 	},60000)
 });
 
-function getRandom(min,max){
-    return (Math.random() * (max - min)) + min
-}
-
-function drawProfile(user,channel,embed,callback){
-    getPlayer(user.id,function(player){
-        var date = new Date(player.dob)
-        embed.setTitle(player.name)
-        embed.addField("Date Started:",date.toString(),true)
-        embed.addField("Energy:",player.energy + " / " + player.energyCap,false)
-        embed.addField("Followers:",player.followers,true)
-        for(var skill in player.toolLevel){
-            var durability = player.toolDurability[skill]
-            if(durability == -1){
-                durability = "Infinite"
-            }
-            var rank = player.toolLevel[skill]
-            if(rank == 0){
-                rank = "None"
-            }
-            embed.addField(skill.capitalize() + ":","Rank: " + rank + "\nDurability: " + durability,true)
-        }
-        var resources = ""
-        var resourceCount = 0
-        for(var type in player.resources){
-            resources += type.capitalize() + ": " + player.resources[type] + "\n"
-            resourceCount += player.resources[type]
-        }
-        embed.addField("Resources (" + resourceCount + " / " + player.storageCapacity + "):" ,resources,true)
-        embed.setThumbnail(user.displayAvatarURL)
-        callback(embed)
-    })
-}
-
-function drawCity(dominion,channel,embed,callback){
-    var out = fs.createWriteStream("./cities/" + dominion.id + '.jpg')
-    var canvas = createCanvas(144, 144)
-    const ctx = canvas.getContext('2d')
-    var stream = canvas.pngStream();
-    var sprites = {}                
-    fs.readdir("./art",function(err,items){
-        for(var images in items){
-            const img = new Image()
-            img.src = "./art/" + items[images]
-            sprites[items[images].split(".")[0]] = (img)
-        }
-        for (let i = 0; i < 9; i++) {
-            for (let j = 0; j < 9; j++) {
-                ctx.drawImage(sprites[cityToSpriteMap[dominion.city[i][j]]],i*16,j*16)
-            }   
-        }
-                
-        stream.on('data', function(chunk){
-            out.write(chunk);
-          });
-           
-          stream.on('end', function(){
-            out.end(function(){
-                embed.addField("City View","Now viewing the city of the dominion of " + client.guilds.get(dominion.id).name + "!",true)
-                embed.attachFile("./cities/" + dominion.id + '.jpg')
-                callback(embed)
-            })
-          });
-    })
-}
-
-function createPlayer(user){
-    var playerData = firebase.database().ref("players/" + user.id);
-    playerData.once('value').then(function(playerSnapshot) {
-        var now = new Date();
-        var newPlayer = {
-            name:user.username,
-            id:user.id,
-            lastAction:now.getTime(),
-            resources:{
-                coal:0,
-                iron:0,
-                ironOre:0,
-                stone:0,
-                crystals:0,
-                food:0,
-                lumber:0
-            },
-            storageCapacity:200,
-            followers:0,
-            toolLevel:{
-                fighting:1,
-                mining:1,
-                lumberjacking:1,
-                building:1,
-                farming:0
-            },
-            toolDurability:{
-                fighting:-1,
-                mining:-1,
-                lumberjacking:-1,
-                building:-1,
-                farming:-1
-            },
-            energy:10,
-            energyCap:10,
-            dominions:[],
-            dob:now.getTime(),
-            prefix:"+"
-        }
-        playerData.update(newPlayer)
-    })
-}
-
-function outputEmbed(channel,embed,player){
-    if(player != null && player != undefined){
-        var now = new Date();
-        if(now.getTime() - player.lastAction >= 600000 && player.energy != player.energyCap){
-            player.energy += Math.floor(now.getTime() - player.lastAction/600000)
-            player.lastAction = now.getTime()
-            if(player.energy > player.energyCap){
-                player.energy = player.energyCap
-            }
-            updatePlayer(player,function(){
-                embed.setFooter("Discord Dominons v" + version + " by Darkspine77#1365 ⚡" +player.name + " now has (" + player.energy + " / " + player.energyCap + ") energy!⚡")
-                channel.sendEmbed("",embed)
-            })
-        } else {
-            embed.setFooter("Discord Dominons v" + version + " by Darkspine77#1365")
-            channel.sendEmbed("",embed)
-        }
-    } else {
-        embed.setFooter("Discord Dominons v" + version + " by Darkspine77#1365")
-        channel.sendEmbed("",embed)
-    }   
-}
-
-function createDominion(guild,user,channelID){
-    var playerData = firebase.database().ref("players/" + user.id);
-    playerData.once('value').then(function(playerSnapshot) {
-        var now = new Date();
-        var dominions = firebase.database().ref("dominions/" + guild.id);
-        var newDominion = {
-            resources:{
-                villagerPopulation:0,
-                coal:0,
-                gold:0,
-                stone:0,
-                iron:0,
-                crystals:0,
-                food:0,
-                lumber:0,
-                housing:0
-            },
-            trading:{
-                active:false,
-                buying:{
-                    coal:{
-                        wanted:0,
-                        payPer:0
-                    },
-                    stone:{
-                        wanted:0,
-                        payPer:0
-                    },
-                    iron:{
-                        wanted:0,
-                        payPer:0
-                    },
-                    crystals:{
-                        wanted:0,
-                        payPer:0
-                    },
-                    food:{
-                        wanted:0,
-                        payPer:0
-                    },
-                    lumber:{
-                        wanted:0,
-                        payPer:0
-                    },
-                    housing:{
-                        wanted:0,
-                        payPer:0
+client.on('guildMemberUpdate', (oldMember,newMember) => {
+    tools.getDominion(newMember.guild.id,function(dominion){
+        if(newMember.user.id != dominion.owner && newMember["_roles"].includes(dominion.roles.leader.id)){
+            var embed = new Discord.RichEmbed()
+            tools.getPlayer(newMember.user.id,function(player){
+                if(player != null){
+                    console.log("test")
+                    for(var member of newMember.guild.members.array()){
+                        if(member["_roles"].includes(dominion.roles.leader.id) && member.user.id != newMember.user.id){
+                            member.removeRole(dominion.roles.leader.id)
+                        }
                     }
-                },
-                selling:{
-                    coal:{
-                        offered:0,
-                        payPer:0
-                    },
-                    stone:{
-                        offered:0,
-                        payPer:0
-                    },
-                    iron:{
-                        offered:0,
-                        payPer:0
-                    },
-                    crystals:{
-                        offered:0,
-                        payPer:0
-                    },
-                    food:{
-                        offered:0,
-                        payPer:0
-                    },
-                    lumber:{
-                        offered:0,
-                        payPer:0
-                    },
-                    housing:{
-                        offered:0,
-                        payPer:0
+                    dominion.owner = newMember.user.id
+                    embed.addField("New Leadership",newMember.user.username + " has been made leader of the dominion of " + newMember.guild.name + "!")
+                    tools.updateDominion(dominion,function(){
+                        for(var channel in dominion.legalChannels){
+                            tools.outputEmbed(client.channels.get(dominion.legalChannels[channel]),embed)
+                        }  
+                    })
+                } else {
+                    newMember.removeRole(dominion.roles.leader.id)
+                    if(newMember.user.id != client.user.id){
+                        embed.addField("Attempted Promotion","A user tried to give you owner ship of the dominion of " + newMember.guild.name + ". Please do +start and ask them to try again",true)
+                        newMember.user.createDM().then(dm => {
+                                tools.outputEmbed(dm,embed)
+                            }
+                        )
                     }
                 }
-            },
-            city:[
-                [0,0,0,0,0,0,0,0,0],
-                [0,0,0,0,0,0,0,0,0],
-                [0,0,0,0,0,0,0,0,0],
-                [0,0,0,0,0,0,0,0,0],
-                [0,0,0,0,1,0,0,0,0],
-                [0,0,0,0,0,0,0,0,0],
-                [0,0,0,0,0,0,0,0,0],
-                [0,0,0,0,0,0,0,0,0],
-                [0,0,0,0,0,0,0,0,0]
-            ],
-            storageCapacity:2000,
-            military:[0,0,0,0,0,0,0,0,0,0],
-            id:guild.id,
-            owner:user.id,
-            moderators:[user.id],
-            dob:now.getTime(),
-            legalChannels:[channelID]
+            })
+            
         }
-        if(playerSnapshot.val() == null){
-            createPlayer(user)
-        }
-        dominions.update(newDominion)
-    })
-}
+    })   
+})
 
 client.on('message', message => {
     if(message.author.id == client.user.id){
@@ -316,209 +85,54 @@ client.on('message', message => {
                 legal = dominion.legalChannels.includes(message.channel.id)
             }
             var embed = new Discord.RichEmbed();
-            if(legal){
-                switch(input[0]){
-                    case prefix + "claim":
-                        if(message.author.id == message.guild.ownerID){
-                            if(dominion == null){
-                                embed.addField("Dominion Created","The dominion of " + message.guild.name + " has been created! All commands related to Discord Dominions will be handled here",true)
-                                embed.addField("Player Created","Welcome to the world of Discord Dominions " + message.author.username + "!",true)
-                                createDominion(message.guild,message.author,message.channel.id)
-                                outputEmbed(message.channel,embed)  
+            if(input[0].slice(0,prefix.length) == prefix || input[0].slice(0,1) == "+"){
+                if(legal){
+                    var commandString = input[0].slice(prefix.length).toLocaleLowerCase()
+                    if(commands[commandString]){
+                        var command = commands[commandString]
+                        if(command.fullAuth){
+                            if(dominion != null && player != null){
+                                var now = new Date();
+                                if(now.getTime() - player.lastAction >= 300000 && player.energy != player.energyCap){
+                                    player.energy += Math.floor((now.getTime() - player.lastAction)/300000)
+                                    player.lastAction = now.getTime()
+                                    if(player.energy > player.energyCap){
+                                        player.energy = player.energyCap
+                                    }
+                                    tools.updatePlayer(player,function(){
+                                        embed.setFooter("Discord Dominions v" + version + " by Darkspine77#1365 ⚡" + player.name + " now has (" + player.energy + " / " + player.energyCap + ") energy!⚡")
+                                        command.run(tools,input,dominion,player,message,embed)
+                                    })
+                                } else {
+                                    embed.setFooter("Discord Dominions v" + version + " by Darkspine77#1365")
+                                    command.run(tools,input,dominion,player,message,embed)
+                                }
                             } else {
-                                embed.addField("Error","A dominion for this server has already been created",true)
-                                outputEmbed(message.channel,embed)  
-                            }
+                                if(dominion == null){
+                                    embed.addField("Error","A dominion must be started in this server before this command can be used here. Have the server owner do the command '+claim' in the channel that will be used for this bots functions.",true)
+                                }
+                                if(player == null){
+                                    embed.addField("Error","No player account exists for " + message.author.username +". Please do +start",true)
+                                }
+                                tools.outputEmbed(message.channel,embed,player)
+                            }            
                         } else {
-                            embed.addField("Error","A dominion can only be started by the server owner. Have them do the command '+claim' in the channel that will be used for this bots functions.",true)
-                            outputEmbed(message.channel,embed)  
+                            command.run(tools,input,message,embed)
                         }
-                        break;
-                    case prefix + "start":
-                        if(player == null){
-                            embed.addField("Player Created","Welcome to the world of Discord Dominions " + message.author.username + "!",true)
-                            createPlayer(message.author)
-                            outputEmbed(message.channel,embed)  
-                        } else {
-                            embed.addField("Error","A player account already exists for " + message.author.username,true)
-                            outputEmbed(message.channel,embed)  
-                        }
-                        break;
-                    default:
-                        if(dominion != null && player != null){
-                            switch(input[0]){
-                                case prefix + "city":
-                                    if(dominion != null){
-                                        drawCity(dominion,message.channel,embed,function(newembed){
-                                            message.channel.send("",newembed,player)  
-                                        })
-                                    } else {
-                                        embed.addField("Error","A dominion has not been established for this server, ask the creator of the server to do +claim",true)
-                                        outputEmbed(message.channel,embed,player)  
-                                    }
-                                    break; 
-                                case prefix + "profile":
-                                        drawProfile(message.author,message.channel,embed,function(newembed){
-                                            outputEmbed(message.channel,embed,player) 
-                                        })
-                                    break;
-                                case prefix + "gather":
-                                    var actionMap = {
-                                        "minerals":"mining",
-                                        "lumber":"lumberjacking"
-                                    }
-                                    if(input.length == 2){
-                                        var yieldMaps = {
-                                            mining:{
-                                                stone:[0.9,8],
-                                                coal:[0.5,5],
-                                                ironOre:[0.33,1.33],
-                                                crystals:[0.1,0.9]
-                                            },
-                                            lumberjacking:{
-                                                lumber:[2,10]
-                                            }
-                                        }
-                                        var resourceStructureMap = {
-                                            "minerals":3,
-                                            "lumber":2
-                                        }                                        
-                                        var resourceStructureID = resourceStructureMap[input[1]]
-                                        var action = actionMap[input[1]];
-                                        if(action != undefined){
-                                            var energyCost = 2
-                                            for(var row in dominion.city){
-                                                if(dominion.city[row].includes(resourceStructureID)){
-                                                    energyCost = 1
-                                                    break;
-                                                }
-                                            }
-                                            if(player.energy >= energyCost){
-                                                player.energy -= energyCost        
-                                                var maximumYield = 0
-                                                for(var resource in yieldMaps[action]){
-                                                    maximumYield += yieldMaps[action][resource][1] * player.toolLevel[action]
-                                                }
-                                                var currentCapacity  = 0
-                                                for(var type in player.resources){
-                                                    currentCapacity += player.resources[type]
-                                                    if(type == "iron"){
-                                                        currentCapacity += player.resources[type]
-                                                    }
-                                                }
-                                                if(currentCapacity + maximumYield <= player.storageCapacity){
-                                                    var resourceYield = yieldMaps[action]
-                                                    for(var resources in resourceYield){
-                                                        resourceYield[resources] = Math.floor(getRandom(player.toolLevel[action] * resourceYield[resources][0],player.toolLevel[action] * resourceYield[resources][1]))
-                                                    }
-                                                    embed.setTitle("Resources Gathered By " + player.name + ":")
-                                                    for(var type in resourceYield){
-                                                        player.resources[type] += resourceYield[type]
-                                                        embed.addField(type.capitalize(),resourceYield[type],true)
-                                                    }
-                                                    if(player.toolDurability[action] != -1){
-                                                        player.toolDurability[action]--
-                                                        if(player.toolDurability[action] == 0){
-                                                            player.toolLevel[action] = 1
-                                                            player.toolDurability[action] = -1
-                                                        }
-                                                    }
-                                                    updatePlayer(player,function(newPlayer){
-                                                        outputEmbed(message.channel,embed,newPlayer)
-                                                    })
-                                                } else {
-                                                    embed.addField("Not Enough Capacity","You would not be able to store the maximum resource yield from this action")
-                                                    outputEmbed(message.channel,embed,player)
-                                                }  
-                                            } else {
-                                                embed.addField("Out of Energy","You need more energy before you preform an action")
-                                                outputEmbed(message.channel,embed,player)
-                                            }
-                                        }  else {
-                                            var validResources = ""
-                                            for(var resource in resourceStructureMap){
-                                                validResources += "(" + resource + ")\n"
-                                            }
-                                            embed.addField("Invalid Resource",input[1] + " is not a valid resource to gather. Valid resources to gather are:\n" + validResources)
-                                            outputEmbed(message.channel,embed,player)
-                                        }
-                                    } else {
-                                        
-                                    }
-                                    break;
-                                case prefix + "give":
-                                    if(input.length == 3){
-                                        var resources = ["coal","stone","iron","food","crystals","lumber"]
-                                        if(resources.includes(input[1])){
-                                            if(!isNaN(parseInt(input[2]))){
-                                                if(player[input[1]] >= parseInt(input[2])){
-                                                    var transactionMessage = player.name + " will be giving " + input[2] + " " + input[1] + " to the dominion of " + getDominionName(dominion.id)
-                                                    var sale = 0
-                                                    if(dominion.trading.active){
-                                                        sale = dominion.trading.buying[input[1]] * parseInt(input[2])
-                                                        if(dominion.gold >= sale){
-                                                            if(dominion.trading.buying[input[1]].wanted <= parseInt(input[2]) || dominion.trading.buying[input[1]].wanted == -1){
-                                                                transactionMessage += "\n\nThe dominion of " + getDominionName(dominion.id) + " will pay " + sale + " gold for " + dominion.trading.buying[input[1]].wanted + " of the incoming " + input[1]
-                                                            } else {
-                                                                transactionMessage += "\n\nThe dominion of " + getDominionName(dominion.id) + " will pay " + sale + " gold for " + input[2] + " " + input[1]
-                                                            }
-                                                        }
-                                                    }
-                                                    player.confirming = {
-                                                        type:"give",
-                                                        amount:parseInt(input[2]),
-                                                        resource:input[1],
-                                                        destination:dominion.id,
-                                                        donator:player.id,
-                                                        repayment:sale
-                                                    }
-                                                    embed.addField("Giving Resources",transactionMessage)
-                                                    embed.addField("Confirmation",player.name + " must type +yes to confirm this action");      
-                                                } else {
-                                                    embed.addField("Not Enough of Resource",player.name + " does not have " + input[2] + " " + input[1] + " to give")
-                                                    outputEmbed(message.channel,embed,player) 
-                                                }
-                                            } else {
-                                                embed.addField("Invalid Resource Amount",input[2] + " is not a valid amount of a resource to give. Please use numbers to determine how much of a resource you would like to give")
-                                                outputEmbed(message.channel,embed,player)
-                                            }
-                                        } else {
-                                            var validResources = ""
-                                            for(var resource of resources){
-                                                validResources += "(" + resource + ")\n"
-                                            }
-                                            embed.addField("Invalid Resource",input[1] + " is not a valid resource to give. Valid resources to give are:\n" + validResources)
-                                            outputEmbed(message.channel,embed,player)
-                                        }
-                                    } else {
-                                        var validParameters = ""
-                                        for(var paremeter of ["coal","stone","iron","food","crystals","lumber"]){
-                                            validParameters += paremeter + "  "
-                                        }
-                                        embed.addField("Invalid Use of Command","Usage: +give (" + validParameters + ")\nExample: +give stone")
-                                        outputEmbed(message.channel,embed,player)
-                                    }                        
-                            }   
-                        } else {
-                            if(dominion == null){
-                                embed.addField("Error","A dominion must be started in this server before Discord Dominions commands can be used here. Have the server owner do the command '+claim' in the channel that will be used for this bots functions.",true)
-                            }
-                            if(player == null){
-                                embed.addField("Error","No player account exists for " + message.author.username +". Please do +start",true)
-                            }
-                            outputEmbed(message.channel,embed,player)
-                        }    
-                        break;                 
-                }
-            } else {
-                var legalChannels = dominion.legalChannels
-                var channelList = ""
-                for(var channel in legalChannels){
-                    channelList += "<#" + legalChannels[channel] + ">  "
-                }
-                embed.addField("Error","Commands for Discord Dominions can only be used in the following channels: " + channelList,true)
-                outputEmbed(message.channel,embed)  
-            }           
+                    } else {
+                        embed.addField("Error","Command not found",true)
+                        tools.outputEmbed(message.channel,embed) 
+                    }
+                } else {
+                    var legalChannels = dominion.legalChannels
+                    var channelList = ""
+                    for(var channel in legalChannels){
+                        channelList += "<#" + legalChannels[channel] + ">  "
+                    }
+                    embed.addField("Error","Commands for Discord Dominions can only be used in the following channels: " + channelList,true)
+                    tools.outputEmbed(message.channel,embed)  
+                }   
+            }                   
         })
 	})
 })
@@ -531,7 +145,7 @@ client.on('guildCreate', guild => {
     guild.fetchMember(client.user).then(member => {
         while(!sent){   
             if(guild.channels.array()[i].permissionsFor(member).has("SEND_MESSAGES") && guild.channels.array()[i].sendEmbed != undefined){
-                outputEmbed(guild.channels.array()[i],embed) 
+                tools.outputEmbed(guild.channels.array()[i],embed) 
                 sent = true
             }
             i++
