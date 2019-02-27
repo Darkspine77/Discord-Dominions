@@ -12,7 +12,7 @@ fs.readdir("./commands", function(err, items) {
         commands[command.split(".js")[0]] = require("./commands/" + command)
     }
 });
-
+var helpFields = []
 
 String.prototype.capitalize = function() {
     return this.charAt(0).toUpperCase() + this.slice(1);
@@ -24,6 +24,21 @@ firebase.initializeApp(credentials.database);
 client.login(credentials.token)
 
 client.on('ready', () => {
+    for(var command in commands){
+        var field = {}
+        if(commands[command].multiCommand){
+            for(var index in commands[command].aliases){
+                field = {}
+                field.name = commands[command].aliases[index]
+                field.value = "Description:\n" + commands[command].aliasesDescription[index] + "\n\nUsage:\n" + commands[command].aliasesUsage[index] + "\n\nExample:\n" + commands[command].aliasesExample[index]
+                helpFields.push(field)
+            }
+        } else {
+            field.name = commands[command].name
+            field.value = "Description:\n" + commands[command].description + "\n\nUsage:\n" + commands[command].usage + "\n\nExample:\n" + commands[command].example
+            helpFields.push(field)
+        }
+    }
     tools.initialize(firebase,client,version,fs,structureData,prettyms)
     tools.tools = tools
 	console.log("Starting Dominions v" + version + " ... on shard #" + (client.shard.id + 1))
@@ -68,6 +83,24 @@ client.on('guildMemberUpdate', (oldMember,newMember) => {
     })   
 })
 
+client.on("messageReactionAdd", (reaction,user) =>{
+    if(reaction.message.author.id == client.user.id){
+        if(user.id != client.user.id){
+            if(reaction.message.embeds[0].footer.text.split("|") == " Scroll Window"){
+                if("➡" == reaction["_emoji"].name){
+                    // switch(){
+    
+                    // }
+                } else if("⬅" == reaction["_emoji"].name){
+                    // switch(){
+    
+                    // }
+                }
+            }
+        }
+    }
+})
+
 client.on('message', message => {
     if(message.author.id == client.user.id){
         return
@@ -92,16 +125,9 @@ client.on('message', message => {
                 if(legal){
                     var commandString = input[0].slice(prefix.length).toLocaleLowerCase()
                     if(commandString == "allcommands"){
-                        for(var command in commands){
-                            if(commands[command].multiCommand){
-                                for(var index in commands[command].aliases){
-                                    embed.addField(commands[command].aliases[index],"Description:\n" + commands[command].aliasesDescription[index] + "\n\nUsage:\n" + commands[command].aliasesUsage[index] + "\n\nExample:\n" + commands[command].aliasesExample[index] +"\n__")
-                                }
-                            } else {
-                                embed.addField(commands[command].name,"Description:\n" + commands[command].description + "\n\nUsage:\n" + commands[command].usage + "\n\nExample:\n" + commands[command].example +"\n__")
-                            }
-                        }
-                        tools.outputEmbed(message.channel,embed,player)
+                        embed.setTitle("Help Window")
+                        embed.setDescription("Command #1")
+                        tools.outputEmbed(message.channel,embed,null,true)
                     } else {
                         for(var command in commands){
                             if(commands[command].aliases){

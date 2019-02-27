@@ -237,7 +237,7 @@ module.exports = {
     createPlayer: function(user){
         createPlayer(user)
     },
-    outputEmbed: function (channel,embed,player){
+    outputEmbed: function (channel,embed,player,scroll){
         var now = new Date()
         if(!embed.color){
             embed.setColor([114,137,218])
@@ -251,7 +251,16 @@ module.exports = {
         } else {
             embed.setFooter("Discord Dominions v" + version)
         }
-        channel.send("",embed)
+        if(scroll){
+            embed.setFooter("Discord Dominions v" + version + "| Scroll Window")
+            channel.send("",embed).then(message => {
+                message.react("⬅").then(() =>{
+                    message.react("➡")
+                })
+            })
+        } else {
+            channel.send("",embed)
+        }   
     },
     cityHasStructure: function(dominion,structureID){
         for(var row in dominion.city){
