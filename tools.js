@@ -1,17 +1,4 @@
 const { createCanvas, loadImage, Image } = require('canvas')
-var cityToSpriteMap = {
-    0:"grass",
-    1:"capital",
-    2:"lumberyard",
-    3:"mine",
-    4:"blacksmith",
-    5:"tradingpost",
-    6:"farm",
-    7:"furnacehouse",
-    8:"storage",
-    9:"housing",
-    10:"warehouse"
-}
 
 function createPlayer(user){
     var playerData = firebase.database().ref("players/" + user.id);
@@ -31,9 +18,8 @@ function createPlayer(user){
                 lumber:0,
                 gold:0
             },
-            storageCapacity:100,
             followers:0,
-            maxGear:5,
+            maxGear:4,
             gear:["mining","lumberjacking","construction"],
             toolLevel:[1,1,1],
             toolDurability:[-1,-1,-1],
@@ -45,17 +31,22 @@ function createPlayer(user){
         playerData.update(newPlayer)
     })
 }
+function getPlayerStorage(player){
+    return 100 + (player.maxGear - player.gear.length) * 100 
+}
 
 module.exports = {
     firebase:null,
     client:null,
     version:null,
     fs:null,
-    initialize: function(firebaseI,clientI,versionI,fsI){
+    structureData:null,
+    initialize: function(firebaseI,clientI,versionI,fsI,structureDataI){
         firebase = firebaseI
         client = clientI;
         version = versionI;
         fs = fsI;
+        structureData = structureDataI
     },
     getDominionName: function (id){
         return client.guilds.get(id).name
@@ -119,9 +110,9 @@ module.exports = {
         this.getPlayer(user.id,function(player){
             var date = new Date(player.dob)
             embed.setTitle(player.name)
-            embed.addField("Date Started:",date.toString(),true)
-            embed.addField("Energy:",player.energy + " / " + player.energyCap,false)
-            embed.addField("Followers:",player.followers,true)
+            embed.addField("Date Started:",date.toString(),)
+            embed.addField("Energy:",player.energy + " / " + player.energyCap)
+            embed.addField("Followers:",player.followers)
             for(var gearIndex in player.gear){
                 var durability = player.toolDurability[gearIndex]
                 if(durability == -1){
@@ -131,15 +122,21 @@ module.exports = {
                 if(rank == 0){
                     rank = "None"
                 }
-                embed.addField(player.gear[gearIndex].capitalize() + ":","Rank: " + rank + "\nDurability: " + durability,true)
+                embed.addField(player.gear[gearIndex].capitalize() + " Gear:","Rank: " + rank + "\nDurability: " + durability,true)
             }
             var resources = ""
             var resourceCount = 0
             for(var type in player.resources){
-                resources += type.capitalize() + ": " + player.resources[type] + "\n"
-                resourceCount += player.resources[type]
+                if(player.resources[type] > 0){
+                    resources += type.capitalize() + ": " + player.resources[type] + "\n"
+                    resourceCount += player.resources[type]
+                }
             }
-            embed.addField("Resources (" + resourceCount + " / " + player.storageCapacity + "):" ,resources,true)
+            if(resources == ""){
+                embed.addField("Resources (" + resourceCount + " / " + getPlayerStorage(player) + ")","(None)")
+            } else {
+                embed.addField("Resources (" + resourceCount + " / " + getPlayerStorage(player) + "):" ,resources,true)
+            }
             embed.setThumbnail(user.displayAvatarURL)
             callback(embed)
         })
@@ -152,11 +149,14 @@ module.exports = {
                     storage += 200
                 }
                 if(dominion.city[x][y] == 1){
-                    storage += 500
+                    storage += 1000
                 }
             } 
         }
         return storage
+    },
+    getPlayerStorage: function(player){
+        return getPlayerStorage(player)
     },
     getDominionCapacity: function(dominion){
         var capacity = 0
@@ -176,15 +176,21 @@ module.exports = {
         var date = new Date(dominion.dob)
         var housing = 0
         embed.setTitle(this.getDominionName(dominion.id))
-        embed.addField("Date Created:",date.toString(),true)
-        embed.addField("Villager Population: ",dominion.villagerPopulation + "/" + this.getDominionCapacity(dominion),true)
+        embed.addField("Date Created:",date.toString())
+        embed.addField("Villager Population: ",dominion.villagerPopulation + "/" + this.getDominionCapacity(dominion))
         var resources = ""
         var resourceCount = 0
         for(var type in dominion.resources){
-            resources += type.capitalize() + ": " + dominion.resources[type] + "\n"
-            resourceCount += dominion.resources[type]
+            if(dominion.resources[type] > 0){
+                resources += type.capitalize() + ": " + dominion.resources[type] + "\n"
+                resourceCount += dominion.resources[type]
+            }
         }
-        embed.addField("Resources (" + resourceCount + " / " + this.getDominionStorage(dominion) + "):" ,resources,true)
+        if(resources == ""){
+            embed.addField("Resources (" + resourceCount + " / " + this.getDominionStorage(dominion) + ")","(None)")
+        } else {
+            embed.addField("Resources (" + resourceCount + " / " + this.getDominionStorage(dominion) + "):" ,resources)
+        }
         embed.setThumbnail(channel.guild.splashURL)
         callback(embed)
     },
@@ -202,7 +208,7 @@ module.exports = {
             }
             for (let i = 0; i < 9; i++) {
                 for (let j = 0; j < 9; j++) {
-                    ctx.drawImage(sprites[cityToSpriteMap[dominion.city[i][j]]],i*32,j*32)
+                    ctx.drawImage(sprites[structureData.buildingMap[dominion.city[i][j]]],i*32,j*32)
                 }   
             }    
             ctx.beginPath()  
@@ -298,59 +304,7 @@ module.exports = {
                         }
                     },
                     trading:{
-                        active:false,
-                        buying:{
-                            coal:{
-                                wanted:0,
-                                payPer:0
-                            },
-                            stone:{
-                                wanted:0,
-                                payPer:0
-                            },
-                            iron:{
-                                wanted:0,
-                                payPer:0
-                            },
-                            crystals:{
-                                wanted:0,
-                                payPer:0
-                            },
-                            food:{
-                                wanted:0,
-                                payPer:0
-                            },
-                            lumber:{
-                                wanted:0,
-                                payPer:0
-                            }
-                        },
-                        selling:{
-                            coal:{
-                                offered:0,
-                                payPer:0
-                            },
-                            stone:{
-                                offered:0,
-                                payPer:0
-                            },
-                            iron:{
-                                offered:0,
-                                payPer:0
-                            },
-                            crystals:{
-                                offered:0,
-                                payPer:0
-                            },
-                            food:{
-                                offered:0,
-                                payPer:0
-                            },
-                            lumber:{
-                                offered:0,
-                                payPer:0
-                            }
-                        }
+                        active:false
                     },
                     city:[
                         [0,0,0,0,0,0,0,0,0],

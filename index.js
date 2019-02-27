@@ -3,6 +3,7 @@ const firebase = require("firebase");
 const credentials = require("./credentials.json")
 const tools = require("./tools.js")
 const prettyms = require("pretty-ms")
+const structureData = require("./data.json")
 const client = new Discord.Client();
 const fs = require("fs")
 let commands = {};
@@ -23,7 +24,7 @@ firebase.initializeApp(credentials.database);
 client.login(credentials.token)
 
 client.on('ready', () => {
-    tools.initialize(firebase,client,version,fs)
+    tools.initialize(firebase,client,version,fs,structureData)
     tools.tools = tools
 	console.log("Starting Dominions v" + version + " ... on shard #" + (client.shard.id + 1))
 	setInterval(function(){
@@ -38,7 +39,6 @@ client.on('guildMemberUpdate', (oldMember,newMember) => {
                 var embed = new Discord.RichEmbed()
                 tools.getPlayer(newMember.user.id,function(player){
                     if(player != null){
-                        console.log("test")
                         for(var member of newMember.guild.members.array()){
                             if(member["_roles"].includes(dominion.roles.leader.id) && member.user.id != newMember.user.id){
                                 member.removeRole(dominion.roles.leader.id)
@@ -91,7 +91,7 @@ client.on('message', message => {
             if(input[0].slice(0,prefix.length) == prefix || input[0].slice(0,1) == "+"){
                 if(legal){
                     var commandString = input[0].slice(prefix.length).toLocaleLowerCase()
-                    if(commandString == "help"){
+                    if(commandString == "allcommands"){
                         for(var command in commands){
                             embed.addField(commands[command].name,"Description:\n" + commands[command].description + "\n\nUsage:\n" + commands[command].usage + "\n\nExample:\n" + commands[command].example +"\n__")  
                         }
@@ -110,16 +110,24 @@ client.on('message', message => {
                                                 player.energy = player.energyCap
                                             }
                                             tools.updatePlayer(player,function(){
-                                                embed.setFooter("Discord Dominions v" + version + "| Energy: ⚡(" + player.energy + " / " + player.energyCap + ")⚡")
-                                                command.run(tools,input,dominion,player,message,embed)
+                                                embed.setFooter("Discord Dominions v" + version + "| Energy: ⚡(" + player.energy + "/" + player.energyCap + ")⚡")
+                                                if(command.takeStructureData){
+                                                    command.run(structureData,tools,input,dominion,player,message,embed)
+                                                } else {
+                                                    command.run(tools,input,dominion,player,message,embed)
+                                                }
                                             })
                                         } else {
                                             if(player.energy != player.energyCap){
-                                                embed.setFooter("Discord Dominions v" + version + "| Energy: (" + player.energy + " / " + player.energyCap + ") Recharges in " + prettyms(300000 - (now.getTime() - player.lastAction)) + "...")
+                                                embed.setFooter("Discord Dominions v" + version + "| Energy: (" + player.energy + "/" + player.energyCap + ") Recharges in " + prettyms(300000 - (now.getTime() - player.lastAction)) + "...")
                                             } else {
-                                                embed.setFooter("Discord Dominions v" + version + "| Energy: (" + player.energy + " / " + player.energyCap + ")")
+                                                embed.setFooter("Discord Dominions v" + version + "| Energy: (" + player.energy + "/" + player.energyCap + ")")
                                             }
-                                            command.run(tools,input,dominion,player,message,embed)
+                                            if(command.takeStructureData){
+                                                command.run(structureData,tools,input,dominion,player,message,embed)
+                                            } else {
+                                                command.run(tools,input,dominion,player,message,embed)
+                                            }
                                         }
                                     } else {
                                         if(dominion == null){

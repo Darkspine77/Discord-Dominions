@@ -9,15 +9,25 @@ module.exports = {
         if(tools.dominionAuthorization("canMakeRole",message,player,dominion,embed)){
             if(input[1] != "leader"){
                 if(dominion.roles[input[1]]){
-                    if(dominion.roles[input[1]].permissions[input[2]]){
-                        dominion.roles[input[1]].permissions[input[2]] = false
+                    if(dominion.roles[input[1]].permissions[input[2]] == undefined){
+                        if(dominion.roles[input[1]].permissions[input[2]]){
+                            dominion.roles[input[1]].permissions[input[2]] = false
+                        } else {
+                            dominion.roles[input[1]].permissions[input[2]] = true
+                        }
+                        embed.addField("Permission Toggled","The permission (" + input[2] + ") for the (" + input[1] + ") role has been toggled to " + dominion.roles[input[1]].permissions[input[2]])
+                        tools.updateDominion(dominion,function(){
+                            tools.outputEmbed(message.channel,embed,player)
+                        })
                     } else {
-                        dominion.roles[input[1]].permissions[input[2]] = true
-                    }
-                    embed.addField("Permission Toggled","The permission (" + input[2] + ") for the (" + input[1] + ") role has been toggled to " + dominion.roles[input[1]].permissions[input[2]])
-                    tools.updateDominion(dominion,function(){
+                        var validPermissions = ""
+                        for(var permission in dominion.roles[input[1]].permissions){
+                            validPermissions += "(" + permission + ")\n"
+                        }
+                        embed.setColor([255,0,0])
+                        embed.addField("Invalid Permission","Valid permissions are: " + validPermissions)
                         tools.outputEmbed(message.channel,embed,player)
-                    })
+                    }
                 } else {
                     embed.setColor([255,0,0])
                     embed.addField("Invalid Role","This role can not be removed as it does not exist")

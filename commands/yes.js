@@ -8,23 +8,23 @@ module.exports = {
     run: function(tools,input,dominion,player,message,embed){
         if(player.confirming){
             switch(player.confirming.type){
-                case "give":
+                case "store":
                     tools.getPlayer(player.confirming.destination,function(targetPlayer){
                         tools.getDominion(player.confirming.destination,function(targetDominion){
                             targetPlayer.resources[player.confirming.resource] -= player.confirming.amount
                             targetDominion.resources[player.confirming.resource] += player.confirming.amount
-                            if(targetDominion.trading.active){
-                                targetDominion.resources.gold -= player.confirming.repayment
-                                targetPlayer.resources.gold += player.confirming.repayment
-                                targetDominion.trading.buying[player.confirming.resource].wanted -= player.confirming.amount
-                                if(targetDominion.trading.buying[player.confirming.resource].wanted < 0){
-                                    targetDominion.trading.buying[player.confirming.resource].wanted = 0
-                                }
-                            }
-                            embed.addField("Transaction Successful",targetPlayer.name + " has given " +player.confirming.amount + " " + player.confirming.resource + " to the dominion of " + tools.getDominionName(targetDominion.id))
-                            if(player.confirming.repayment > 0){
-                                embed.addField("",player.name + " has received " + player.confirming.repayment + " gold in return")
-                            }
+                            // if(targetDominion.trading.active){
+                            //     targetDominion.resources.gold -= player.confirming.repayment
+                            //     targetPlayer.resources.gold += player.confirming.repayment
+                            //     targetDominion.trading.buying[player.confirming.resource].wanted -= player.confirming.amount
+                            //     if(targetDominion.trading.buying[player.confirming.resource].wanted < 0){
+                            //         targetDominion.trading.buying[player.confirming.resource].wanted = 0
+                            //     }
+                            // }
+                            embed.addField("Transaction Successful",targetPlayer.name + " has stored" +player.confirming.amount + " " + player.confirming.resource + " in the dominion of " + tools.getDominionName(targetDominion.id))
+                            // if(player.confirming.repayment > 0){
+                            //     embed.addField("",player.name + " has received " + player.confirming.repayment + " gold in return")
+                            // }
                             targetPlayer.confirming = null
                             tools.updatePlayer(player,function(){
                                 tools.updateDominion(targetDominion,function(){
@@ -34,7 +34,7 @@ module.exports = {
                         })
                     })
                     break;
-                case "craft":
+                case "craftGear":
                     tools.getPlayer(player.confirming.destination,function(targetPlayer){
                         for(var resource in player.confirming.expenses){
                             targetPlayer.resources[resource] -= player.confirming.expenses[resource]
@@ -100,7 +100,7 @@ module.exports = {
                             targetDominion.resources[player.confirming.resource] -= player.confirming.amount
                             embed.addField("Successful Resource Withdrawal",targetPlayer.name + " took " + player.confirming.amount + " " + player.confirming.resource + " from " + tools.getDominionName(targetDominion.id))
                             targetPlayer.confirming = null
-                            tools.updatePlayer(player,function(){
+                            tools.updatePlayer(targetPlayer,function(){
                                 tools.updateDominion(targetDominion,function(){
                                     tools.outputEmbed(message.channel,embed)
                                 })
@@ -108,6 +108,60 @@ module.exports = {
                         })
                     })
                     break;
+                case "craftResources":
+                        tools.getPlayer(player.confirming.destination,function(targetPlayer){
+                            targetPlayer.resources[player.confirming.resource] += player.confirming.amount
+                            for(var resource in player.confirming.expenses){
+                                targetPlayer.resources[resource] -= player.confirming.expenses[resource] * player.confirming.amount
+                            }
+                            embed.addField("Crafting Successful",targetPlayer.name + " crafted " + player.confirming.amount + " " + player.confirming.resource)
+                            targetPlayer.confirming = null
+                            tools.updatePlayer(targetPlayer,function(){
+                                tools.outputEmbed(message.channel,embed)
+                            })
+                        })
+                    break;
+                case "request":
+                    tools.getDominion(player.confirming.destination,function(targetDominion){
+                        if(targetDominion.trading.buying == undefined){
+                            targetDominion.trading.buying = {}
+                        }
+                        targetDominion.trading.buying[player.confirming.resource] ={
+                            wanted:player.confirming.totalAmount,
+                            exchange:{
+                                amount:player.confirming.minResource,
+                                value:player.confirming.minGold
+                            }
+                        }
+                        embed.addField("Request Successful",tools.getDominionName(dominion.id)+ " is now giving " + minGold + " gold to players who sell it at least " + minResource + " " + input[1])
+                        player.confirming = null
+                        tools.updateDominion(targetDominion,function(){
+                            tools.updatePlayer(targetPlayer,function(){
+                                tools.outputEmbed(message.channel,embed)
+                            })
+                        })
+                    })
+                case "offer":
+                    tools.getDominion(player.confirming.destination,function(targetDominion){
+                        if(targetDominion.trading.selling == undefined){
+                            targetDominion.trading.selling = {}
+                        }
+                        targetDominion.trading.selling[player.confirming.resource] ={
+                            wanted:player.confirming.totalAmount,
+                            exchange:{
+                                amount:player.confirming.minResource,
+                                value:player.confirming.minGold
+                            }
+                        }
+                        embed.addField("Offer Successful",tools.getDominionName(dominion.id)+ " is now selling " + minResource + " " + input[1] + " for " + minGold + " gold")
+                        player.confirming = null
+                        tools.updateDominion(targetDominion,function(){
+                            tools.updatePlayer(targetPlayer,function(){
+                                tools.outputEmbed(message.channel,embed)
+                            })
+                        })
+                    })
+                break;
             }
         } else {
             embed.setColor([255,0,0])

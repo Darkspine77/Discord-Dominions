@@ -1,22 +1,22 @@
 module.exports = {
     fullAuth:true,
+    takeStructureData:true,
     name:"+take",
     description:"Take resources from the dominion the command is executed in",
     usage:"+take (resource) (amount)",
     example:"+take stone 1",
     legalParameterCount:[3],
-    run: function(tools,input,dominion,player,message,embed){
+    run: function(structureData,tools,input,dominion,player,message,embed){
         if(tools.dominionAuthorization("canTakeResources",message,player,dominion,embed)){
-            var resources = ["coal","stone","iron","food","crystals","lumber"]
+            var resources = structureData.resources
             if(resources.includes(input[1])){
                 if(!isNaN(parseInt(input[2])) && parseInt(input[2]) > 0){
                     if(dominion.resources[input[1]] >= parseInt(input[2])){
                         var resourceCount = 0
                         for(var type in player.resources){
-                            resources += type.capitalize() + ": " + player.resources[type] + "\n"
                             resourceCount += player.resources[type]
                         }
-                        if(resourceCount + parseInt(input[2]) <= player.storageCapacity){
+                        if(resourceCount + parseInt(input[2]) <= tools.getPlayerStorage(player)){
                             player.confirming = {
                                 type:"take",
                                 amount:parseInt(input[2]),
@@ -31,7 +31,7 @@ module.exports = {
                             })
                         } else {
                             embed.setColor([255,0,0])
-                            embed.addField("Invalid Dominion Storage",player.name + " does not have enough storage for " + input[2] + " " + input[1])
+                            embed.addField("Invalid Player Storage",player.name + " does not have enough storage for " + input[2] + " " + input[1])
                             tools.outputEmbed(message.channel,embed,player) 
                         }
                     } else {

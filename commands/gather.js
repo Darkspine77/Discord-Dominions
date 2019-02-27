@@ -1,59 +1,19 @@
 module.exports = {
     fullAuth:true,
+    takeStructureData:true,
     name:"+gather",
     description:"Gather resources ",
     usage:"+gather (resource type)",
     example:"+gather minerals",
     legalParameterCount:[2],
-    run: function(tools,input,dominion,player,message,embed){
-        var actionMap = {
-            "minerals":"mining",
-            "lumber":"lumberjacking",
-            "food":"farming"
-        }
-        var buildingMap = {
-            1:"capital",
-            2:"lumberyard",
-            3:"mine",
-            4:"blacksmith",
-            5:"tradingpost",
-            6:"farm",
-            7:"furnacehouse",
-            8:"storage"
-        }
-        var yieldMaps = {
-            mining:{
-                resources:{
-                    stone:[0.9,8],
-                    coal:[0.5,5],
-                    ironOre:[0.33,1.33],
-                    crystals:[0.1,0.9]
-                },
-                energyCostNS:2,
-                energyCost:1,
-                structure:3
-            },
-            lumberjacking:{
-                resources:{
-                    lumber:[2,10]
-                },
-                energyCostNS:2,
-                energyCost:1,
-                structure:2
-            },
-            farming:{
-                resources:{
-                    food:[2,10]
-                },
-                energyCostNS:null,
-                energyCost:1,
-                structure:6
-            }
-        }                                   
+    run: function(structureData,tools,input,dominion,player,message,embed){
+        var actionMap = structureData.actionMap
+        var buildingMap = structureData.buildingMap
+        var yieldMaps = structureData.yieldMaps                                   
         var action = actionMap[input[1]];
-        var resourceStructureID = yieldMaps[action].structure
         if(action != undefined){
-            var energyCost = yieldMaps[action].energyCostNS
+                var resourceStructureID = yieldMaps[action].structure
+                var energyCost = yieldMaps[action].energyCostNS
             if(tools.cityHasStructure(dominion,resourceStructureID)){
                 energyCost = yieldMaps[action].energyCost
             }
@@ -64,16 +24,16 @@ module.exports = {
                         player.energy -= energyCost        
                         var maximumYield = 0
                         for(var resource in yieldMaps[action].resources){
-                            maximumYield += yieldMaps[action].resources[resource][1] * player.toolLevel[gearIndex]
+                            maximumYield += Math.floor(yieldMaps[action].resources[resource][1] * player.toolLevel[gearIndex])
                         }
                         var currentCapacity = 0
                         for(var type in player.resources){
                             currentCapacity += player.resources[type]
                         }
-                        if(currentCapacity + maximumYield <= player.storageCapacity){
-                            var resourceYield = yieldMaps[action].resources
-                            for(var resources in resourceYield){
-                                resourceYield[resources] = Math.floor(tools.getRandom(player.toolLevel[gearIndex] * resourceYield[resources][0],player.toolLevel[gearIndex] * resourceYield[resources][1]))
+                        if(currentCapacity + maximumYield <= tools.getPlayerStorage(player)){
+                            var resourceYield = {}
+                            for(var resources in yieldMaps[action].resources){
+                                resourceYield[resources] = Math.floor(tools.getRandom(player.toolLevel[gearIndex] * yieldMaps[action].resources[resources][0],player.toolLevel[gearIndex] * yieldMaps[action].resources[resources][1]))
                             }
                             embed.setTitle("Resources Gathered By " + player.name + ": (" + energyCost + " energy spent)")
                             for(var type in resourceYield){
@@ -122,11 +82,11 @@ module.exports = {
             }
         }  else {
             var validResources = ""
-            for(var resource in resourceStructureMap){
+            for(var resource in yieldMaps){
                 validResources += "(" + resource + ")\n"
             }
             embed.setColor([255,0,0])
-            embed.addField("Invalid Resource",input[1] + " is not a valid resource to gather. Valid resources to gather are:\n" + validResources)
+            embed.addField("Invalid Resource",input[1] + " is not a valid type of gathering. Valid types of gathering are:\n" + validResources)
             tools.outputEmbed(message.channel,embed,player)
         }
     }

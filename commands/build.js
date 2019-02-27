@@ -1,85 +1,14 @@
 module.exports = {
     fullAuth:true,
+    takaeStructureData:true,
     name:"+build",
     description:"Build a structure in the city of the dominion the command is executed in\nList all structures that can be built",
     usage:"+build (structure) (x-coordinate) (y-coordinate)\n+build (intent)",
     example:"+build mine 3 3\n+build options",
     legalParameterCount:[4,2],
-    run: function(tools,input,dominion,player,message,embed){
+    run: function(structureData,tools,input,dominion,player,message,embed){
         if(tools.dominionAuthorization("canBuildCity",message,player,dominion,embed)){
-            var structureMap = {
-                mine:{
-                    id:3,
-                    health:3,
-                    buildLevel:1,
-                    resources:{
-                        stone:10,
-                        lumber:50
-                    }
-                },
-                lumberyard:{
-                    id:2,
-                    health:3,
-                    buildLevel:1,
-                    resources:{
-                        stone:50,
-                        lumber:10
-                    }
-                },        
-                blacksmith:{
-                    id:4,
-                    health:4,
-                    buildLevel:1,
-                    resources:{
-                        stone:75,
-                        lumber:75
-                    }
-                },
-                tradingpost:{
-                    id:5,
-                    health:3,
-                    buildLevel:1,
-                    resources:{
-                        stone:10,
-                        lumber:150
-                    }
-                },
-                farm:{
-                    id:6,
-                    health:1,
-                    buildLevel:1,
-                    resources:{
-                        lumber:300
-                    }
-                },
-                furnacehouse:{
-                    id:7,
-                    health:4,
-                    buildLevel:1,
-                    resources:{
-                        stone:250,
-                        lumber:50
-                    }
-                },
-                storage:{
-                    id:8,
-                    health:2,
-                    buildLevel:1,
-                    resources:{
-                        stone:100,
-                        lumber:100
-                    }
-                },
-                house:{
-                    id:9,
-                    health:2,
-                    buildLevel:1,
-                    resources:{
-                        stone:25,
-                        lumber:175
-                    }
-                }
-            }
+            var structureMap = structureData.buildStructureMap
             if(input.length == 4){
                 if(structureMap[input[1]] != undefined){
                     if(player.gear.includes("construction")){

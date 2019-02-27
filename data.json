@@ -1,0 +1,145 @@
+{
+    "craftingGearMap":{
+        "mining": {
+          "structureReq": 4,
+          "rank": {"2": {"resources": {"lumber": 10, "stone": 30}, "durability": 25}}
+        },
+        "lumberjacking": {
+          "structureReq": 4,
+          "rank": {"2": {"resources": {"lumber": 20, "stone": 30}, "durability": 25}}
+        },
+        "farming": {
+          "structureReq": 4,
+          "rank": {"1": {"resources": {"lumber": 50}, "durability": 25}}
+        },
+        "construction": {
+          "structureReq": 4,
+          "rank": {
+            "2": {"resources": {"lumber": 100, "stone": 100}, "durability": 10}
+          }
+        },
+        "fighting": {
+          "structureReq": 4,
+          "rank": {"2": {"resources": {"lumber": 20, "stone": 150}, "durability": 15}}
+        },
+        "exploring": {
+          "structureReq": 4,
+          "rank": {"2": {"resources": {"lumber": 50, "iron": 10}, "durability": 30}}
+        },
+        "hunting": {
+          "structureReq": 4,
+          "rank": {"2": {"resources": {"lumber": 50, "iron": 10}, "durability": 30}}
+        }
+    },
+    "gearUseMap":{
+        "mining":{
+            "+gather":["minerals"]
+        },
+        "lumberjacking":{
+            "+gather":["lumber"]
+        },
+        "farming":{
+            "+farm":[""]
+        },
+        "construction":{
+            "+build":[""]
+        },
+        "fighting":{
+            "+attack":[""]
+        },
+        "exploring":{
+            "+explore":[""]
+        },
+        "hunting":{
+            "+hunt":[""]
+        }
+    }
+    ,
+    "craftingResourceMap":{"iron": {"structureReq": 7, "resources": {"ironOre": 1, "coal": 2}}},
+    "gears":["mining","lumberjacking","farming","construction","fighting","exploring","hunting"],
+    "resources":["coal","stone","iron","food","crystals","lumber"],
+    "yieldMaps":{
+        "mining": {
+          "resources": {
+            "stone": [0.9, 8],
+            "coal": [0.5, 5],
+            "ironOre": [0.33, 1.33],
+            "crystals": [0.1, 0.9]
+          },
+          "energyCostNS": 2,
+          "energyCost": 1,
+          "structure": 3
+        },
+        "lumberjacking": {
+          "resources": {"lumber": [2, 10]},
+          "energyCostNS": 2,
+          "energyCost": 1,
+          "structure": 2
+        },
+        "farming": {
+          "resources": {"food": [2, 10]},
+          "energyCostNS": null,
+          "energyCost": 1,
+          "structure": 6
+        }
+    },
+    "buildingMap":{
+        "0": "grass",
+        "1": "capital",
+        "2": "lumberyard",
+        "3": "mine",
+        "4": "blacksmith",
+        "5": "tradingpost",
+        "6": "farm",
+        "7": "furnacehouse",
+        "8": "storage",
+        "9": "housing",
+        "10": "warehouse"
+      },
+    "actionMap":{"minerals": "mining", "lumber": "lumberjacking", "food": "farming"},
+    "buildStructureMap":{
+        "mine": {
+          "id": 3,
+          "health": 3,
+          "buildLevel": 1,
+          "resources": {"stone": 10, "lumber": 50}
+        },
+        "lumberyard": {
+          "id": 2,
+          "health": 3,
+          "buildLevel": 1,
+          "resources": {"stone": 50, "lumber": 10}
+        },
+        "blacksmith": {
+          "id": 4,
+          "health": 4,
+          "buildLevel": 1,
+          "resources": {"stone": 75, "lumber": 75}
+        },
+        "tradingpost": {
+          "id": 5,
+          "health": 3,
+          "buildLevel": 1,
+          "resources": {"stone": 10, "lumber": 150}
+        },
+        "farm": {"id": 6, "health": 1, "buildLevel": 1, "resources": {"lumber": 300}},
+        "furnacehouse": {
+          "id": 7,
+          "health": 4,
+          "buildLevel": 1,
+          "resources": {"stone": 250, "lumber": 50}
+        },
+        "storage": {
+          "id": 8,
+          "health": 2,
+          "buildLevel": 1,
+          "resources": {"stone": 100, "lumber": 100}
+        },
+        "house": {
+          "id": 9,
+          "health": 2,
+          "buildLevel": 1,
+          "resources": {"stone": 25, "lumber": 175}
+        }
+    }
+}
