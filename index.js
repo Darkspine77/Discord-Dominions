@@ -24,7 +24,7 @@ firebase.initializeApp(credentials.database);
 client.login(credentials.token)
 
 client.on('ready', () => {
-    tools.initialize(firebase,client,version,fs,structureData)
+    tools.initialize(firebase,client,version,fs,structureData,prettyms)
     tools.tools = tools
 	console.log("Starting Dominions v" + version + " ... on shard #" + (client.shard.id + 1))
 	setInterval(function(){
@@ -93,10 +93,23 @@ client.on('message', message => {
                     var commandString = input[0].slice(prefix.length).toLocaleLowerCase()
                     if(commandString == "allcommands"){
                         for(var command in commands){
-                            embed.addField(commands[command].name,"Description:\n" + commands[command].description + "\n\nUsage:\n" + commands[command].usage + "\n\nExample:\n" + commands[command].example +"\n__")  
+                            if(commands[command].multiCommand){
+                                for(var index in commands[command].aliases){
+                                    embed.addField(commands[command].aliases[index],"Description:\n" + commands[command].aliasesDescription[index] + "\n\nUsage:\n" + commands[command].aliasesUsage[index] + "\n\nExample:\n" + commands[command].aliasesExample[index] +"\n__")
+                                }
+                            } else {
+                                embed.addField(commands[command].name,"Description:\n" + commands[command].description + "\n\nUsage:\n" + commands[command].usage + "\n\nExample:\n" + commands[command].example +"\n__")
+                            }
                         }
                         tools.outputEmbed(message.channel,embed,player)
                     } else {
+                        for(var command in commands){
+                            if(commands[command].aliases){
+                                if(commands[command].aliases.includes(input[0])){
+                                    commandString = commands[command].name
+                                }
+                            }
+                        }
                         if(commands[commandString]){
                             var command = commands[commandString]
                             if(command.legalParameterCount.includes(input.length)){
@@ -104,13 +117,16 @@ client.on('message', message => {
                                     if(dominion != null && player != null){
                                         var now = new Date();
                                         if(now.getTime() - player.lastAction >= 300000 && player.energy != player.energyCap){
-                                            player.energy += Math.floor((now.getTime() - player.lastAction)/300000)
-                                            player.lastAction = now.getTime()
-                                            if(player.energy > player.energyCap){
+                                            var energyGain = Math.floor((now.getTime() - player.lastAction)/300000)
+                                            if(player.energy + energyGain > player.energyCap){
+                                                energyGain = player.energyCap - player.energy
                                                 player.energy = player.energyCap
+                                            } else {
+                                                player.energy += energyGain
                                             }
+                                            player.lastAction = now.getTime()
                                             tools.updatePlayer(player,function(){
-                                                embed.setFooter("Discord Dominions v" + version + "| Energy: ⚡(" + player.energy + "/" + player.energyCap + ")⚡")
+                                                embed.addField("Gained Energy","[You gained " + energyGain + " energy!](https://discordapp.com/channels/" + message.guild.id + "/" + message.channel.id +")")
                                                 if(command.takeStructureData){
                                                     command.run(structureData,tools,input,dominion,player,message,embed)
                                                 } else {
@@ -118,11 +134,6 @@ client.on('message', message => {
                                                 }
                                             })
                                         } else {
-                                            if(player.energy != player.energyCap){
-                                                embed.setFooter("Discord Dominions v" + version + "| Energy: (" + player.energy + "/" + player.energyCap + ") Recharges in " + prettyms(300000 - (now.getTime() - player.lastAction)) + "...")
-                                            } else {
-                                                embed.setFooter("Discord Dominions v" + version + "| Energy: (" + player.energy + "/" + player.energyCap + ")")
-                                            }
                                             if(command.takeStructureData){
                                                 command.run(structureData,tools,input,dominion,player,message,embed)
                                             } else {
@@ -145,10 +156,14 @@ client.on('message', message => {
                                 }
                             } else {
                                 embed.setColor([255,0,0])
-                                embed.setTitle("Invalid Use of Command: " + command.name)
-                                embed.addField("Description",command.description)
-                                embed.addField("Usage",command.usage)
-                                embed.addField("Example",command.example)
+                                if(!command.name.multiCommand){
+                                    embed.setTitle("Invalid Use of Command: " + command.name)
+                                    embed.addField("Description",command.description)
+                                    embed.addField("Usage",command.usage)
+                                    embed.addField("Example",command.example)
+                                } else {
+                                    embed.setTitle("Invalid Use of Command: " + input[0])
+                                }
                                 tools.outputEmbed(message.channel,embed,player)
                             }                 
                         } else {

@@ -1,5 +1,4 @@
 const { createCanvas, loadImage, Image } = require('canvas')
-
 function createPlayer(user){
     var playerData = firebase.database().ref("players/" + user.id);
     playerData.once('value').then(function(playerSnapshot) {
@@ -41,12 +40,14 @@ module.exports = {
     version:null,
     fs:null,
     structureData:null,
-    initialize: function(firebaseI,clientI,versionI,fsI,structureDataI){
+    prettyms:null,
+    initialize: function(firebaseI,clientI,versionI,fsI,structureDataI,prettymsI){
         firebase = firebaseI
         client = clientI;
         version = versionI;
         fs = fsI;
         structureData = structureDataI
+        prettyms = prettymsI
     },
     getDominionName: function (id){
         return client.guilds.get(id).name
@@ -110,9 +111,9 @@ module.exports = {
         this.getPlayer(user.id,function(player){
             var date = new Date(player.dob)
             embed.setTitle(player.name)
-            embed.addField("Date Started:",date.toString(),)
-            embed.addField("Energy:",player.energy + " / " + player.energyCap)
-            embed.addField("Followers:",player.followers)
+            embed.addField("Date Started:","```"+date.toDateString()+"```")
+            embed.addField("Energy:","```" + player.energy + " / " + player.energyCap+"```")
+            embed.addField("Followers:","```" +player.followers+"```")
             for(var gearIndex in player.gear){
                 var durability = player.toolDurability[gearIndex]
                 if(durability == -1){
@@ -122,7 +123,7 @@ module.exports = {
                 if(rank == 0){
                     rank = "None"
                 }
-                embed.addField(player.gear[gearIndex].capitalize() + " Gear:","Rank: " + rank + "\nDurability: " + durability,true)
+                embed.addField(player.gear[gearIndex].capitalize() + " Gear:","```Rank: " + rank + "\nDurability: " + durability + "```",true)
             }
             var resources = ""
             var resourceCount = 0
@@ -133,9 +134,9 @@ module.exports = {
                 }
             }
             if(resources == ""){
-                embed.addField("Resources (" + resourceCount + " / " + getPlayerStorage(player) + ")","(None)")
+                embed.addField("Resources (" + resourceCount + " / " + getPlayerStorage(player) + ")","```(None)```")
             } else {
-                embed.addField("Resources (" + resourceCount + " / " + getPlayerStorage(player) + "):" ,resources,true)
+                embed.addField("Resources (" + resourceCount + " / " + getPlayerStorage(player) + "):" ,"```"+resources + "```",true)
             }
             embed.setThumbnail(user.displayAvatarURL)
             callback(embed)
@@ -176,8 +177,8 @@ module.exports = {
         var date = new Date(dominion.dob)
         var housing = 0
         embed.setTitle(this.getDominionName(dominion.id))
-        embed.addField("Date Created:",date.toString())
-        embed.addField("Villager Population: ",dominion.villagerPopulation + "/" + this.getDominionCapacity(dominion))
+        embed.addField("Date Created:","```" + date.toDateString()+"```")
+        embed.addField("Villager Population: ","```"+dominion.villagerPopulation + "/" + this.getDominionCapacity(dominion)+"```")
         var resources = ""
         var resourceCount = 0
         for(var type in dominion.resources){
@@ -187,9 +188,9 @@ module.exports = {
             }
         }
         if(resources == ""){
-            embed.addField("Resources (" + resourceCount + " / " + this.getDominionStorage(dominion) + ")","(None)")
+            embed.addField("Resources (" + resourceCount + " / " + this.getDominionStorage(dominion) + ")","```(None)```")
         } else {
-            embed.addField("Resources (" + resourceCount + " / " + this.getDominionStorage(dominion) + "):" ,resources)
+            embed.addField("Resources (" + resourceCount + " / " + this.getDominionStorage(dominion) + "):" ,"```"+resources+"```")
         }
         embed.setThumbnail(channel.guild.splashURL)
         callback(embed)
@@ -236,9 +237,19 @@ module.exports = {
     createPlayer: function(user){
         createPlayer(user)
     },
-    outputEmbed: function (channel,embed){
+    outputEmbed: function (channel,embed,player){
+        var now = new Date()
         if(!embed.color){
             embed.setColor([114,137,218])
+        }
+        if(player){
+            if(player.energy != player.energyCap){
+                embed.setFooter("Discord Dominions v" + version + "| Energy: (" + player.energy + "/" + player.energyCap + ") Recharges in " + prettyms(300000 - (now.getTime() - player.lastAction)) + "...")
+            } else {
+                embed.setFooter("Discord Dominions v" + version + "| Energy: (" + player.energy + "/" + player.energyCap + ")")
+            }
+        } else {
+            embed.setFooter("Discord Dominions v" + version)
         }
         channel.send("",embed)
     },

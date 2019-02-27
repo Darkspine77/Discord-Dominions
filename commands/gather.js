@@ -1,21 +1,27 @@
 module.exports = {
     fullAuth:true,
     takeStructureData:true,
-    name:"+gather",
-    description:"Gather resources ",
-    usage:"+gather (resource type)",
-    example:"+gather minerals",
-    legalParameterCount:[2],
+    aliases:["+mine","+chop","+hunt","+farm"],
+    aliasesUsage:["+mine","+chop","+hunt","+farm"],
+    aliasesDescription:["Gather minerals","Chop down trees","Hunt animals","Farm resources"],
+    aliasesExample:["+mine","+chop","+hunt","+farm"],
+    multiCommand:true,
+    name:"Gather",
+    legalParameterCount:[1,2],
     run: function(structureData,tools,input,dominion,player,message,embed){
+        var command = input[0].slice(1).toLocaleLowerCase()
         var actionMap = structureData.actionMap
         var buildingMap = structureData.buildingMap
         var yieldMaps = structureData.yieldMaps                                   
         var action = actionMap[input[1]];
-        if(action != undefined){
-                var resourceStructureID = yieldMaps[action].structure
-                var energyCost = yieldMaps[action].energyCostNS
+        if(action != undefined || yieldMaps[command].DEFAULT){
+            if(yieldMaps[command].DEFAULT){
+                action = actionMap[command];
+            }
+            var resourceStructureID = yieldMaps[command][action].structure
+            var energyCost = yieldMaps[command][action].energyCostNS
             if(tools.cityHasStructure(dominion,resourceStructureID)){
-                energyCost = yieldMaps[action].energyCost
+                energyCost = yieldMaps[command][action].energyCost
             }
             if(energyCost != null){
                 if(player.energy >= energyCost){
@@ -23,8 +29,8 @@ module.exports = {
                         var gearIndex = player.gear.indexOf(action)
                         player.energy -= energyCost        
                         var maximumYield = 0
-                        for(var resource in yieldMaps[action].resources){
-                            maximumYield += Math.floor(yieldMaps[action].resources[resource][1] * player.toolLevel[gearIndex])
+                        for(var resource in yieldMaps[command][action].resources){
+                            maximumYield += Math.floor(yieldMaps[command][action].resources[resource][1] * player.toolLevel[gearIndex])
                         }
                         var currentCapacity = 0
                         for(var type in player.resources){
@@ -32,13 +38,13 @@ module.exports = {
                         }
                         if(currentCapacity + maximumYield <= tools.getPlayerStorage(player)){
                             var resourceYield = {}
-                            for(var resources in yieldMaps[action].resources){
-                                resourceYield[resources] = Math.floor(tools.getRandom(player.toolLevel[gearIndex] * yieldMaps[action].resources[resources][0],player.toolLevel[gearIndex] * yieldMaps[action].resources[resources][1]))
+                            for(var resources in yieldMaps[command][action].resources){
+                                resourceYield[resources] = Math.floor(tools.getRandom(player.toolLevel[gearIndex] * yieldMaps[command][action].resources[resources][0],player.toolLevel[gearIndex] * yieldMaps[command][action].resources[resources][1]))
                             }
-                            embed.setTitle("Resources Gathered By " + player.name + ": (" + energyCost + " energy spent)")
+                            embed.setTitle(player.name + "'s " + action.capitalize() + " Result: (" + energyCost + " energy spent)")
                             for(var type in resourceYield){
                                 player.resources[type] += resourceYield[type]
-                                embed.addField(type.capitalize(),resourceYield[type],true)
+                                embed.addField(type.capitalize(),"```" + resourceYield[type] + "```",true)
                             }
                             if(player.toolDurability[gearIndex] != -1){
                                 player.toolDurability[gearIndex]--
@@ -46,15 +52,15 @@ module.exports = {
                                     if(["mining","lumberjacking","construction"].includes(player.gear[gearIndex])){
                                         player.toolLevel[gearIndex] = 1
                                         player.toolDurability[gearIndex] = -1
-                                        embed.addField(action.capitalize() + " Gear Destroyed","Your rank " + player.toolLevel[gearIndex] + " " + action + " gear has been destroyed! You now have rank 1 " + player.gear[gearIndex] + " gear")
+                                        embed.addField(action.capitalize() + " Gear Destroyed",player.name + "'s rank " + player.toolLevel[gearIndex] + " " + action + " gear has been destroyed! You now have rank 1 " + player.gear[gearIndex] + " gear")
                                     } else {
-                                        embed.addField(action.capitalize() + " Gear Destroyed","Your rank " + player.toolLevel[gearIndex] + " " + action + " gear has been destroyed! You can no longer execute the " + player.gear[gearIndex] + "action")
+                                        embed.addField(action.capitalize() + " Gear Destroyed",player.name + "'s rank " + player.toolLevel[gearIndex] + " " + action + " gear has been destroyed! You can no longer execute the " + player.gear[gearIndex] + "action")
                                         player.gear.splice(gearIndex,1)
                                         player.toolDurability.splice(gearIndex,1)
                                         player.toolLevel.splice(gearIndex,1)
                                     }
                                 } else {
-                                    embed.addField(action.capitalize() + " Gear Used","Your rank " + player.toolLevel[gearIndex] + " " + action + " gear has " + player.toolDurability[gearIndex] + " uses remaining")
+                                    embed.addField(action.capitalize() + " Gear Used",player.name + "'s rank " + player.toolLevel[gearIndex] + " " + action + " gear has " + player.toolDurability[gearIndex] + " uses remaining")
                                 }
                             }
                             tools.updatePlayer(player,function(newPlayer){
@@ -62,31 +68,31 @@ module.exports = {
                             })
                         } else {
                             embed.setColor([255,0,0])
-                            embed.addField("Not Enough Capacity","You would not be able to store the maximum resource yield from this action")
+                            embed.addField("Not Enough Capacity",player.name + " would not be able to store the maximum resource yield from this action")
                             tools.outputEmbed(message.channel,embed,player)
                         }
                     } else {
                         embed.setColor([255,0,0])
-                        embed.addField("Missing Gear","You need " + action + " gear to preform this action")
+                        embed.addField("Missing Gear",player.name + " needs " + action + " gear to " + command)
                         tools.outputEmbed(message.channel,embed,player)
                     }
                 } else {
                     embed.setColor([255,0,0])
-                    embed.addField("Out of Energy","You need more energy before you preform an action")
+                    embed.addField("Out of Energy",player.name + " need more energy before you preform an action (" + player.energy + "/" + energyCost +")")
                     tools.outputEmbed(message.channel,embed,player)
                 }
             } else {
                 embed.setColor([255,0,0])
-                embed.addField("Structure Required","You must have a " + buildingMap[resourceStructureID] + " and the appropiate gear to gather " + input[1])
+                embed.addField("Structure Required",tools.getDominionName(dominion.id) + " must have a " + buildingMap[resourceStructureID] + " for players to " + command + " here")
                 tools.outputEmbed(message.channel,embed,player)
             }
         }  else {
             var validResources = ""
-            for(var resource in yieldMaps){
+            for(var resource in yieldMaps[command]){
                 validResources += "(" + resource + ")\n"
             }
             embed.setColor([255,0,0])
-            embed.addField("Invalid Resource",input[1] + " is not a valid type of gathering. Valid types of gathering are:\n" + validResources)
+            embed.addField("Invalid Resource","Players can not " + command + " " + input[1] + ".List of things players can " + command + ":\n" + validResources)
             tools.outputEmbed(message.channel,embed,player)
         }
     }
