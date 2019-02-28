@@ -1,6 +1,7 @@
 module.exports = {
     fullAuth:true,
     takeStructureData:true,
+    needEnergy:true,
     aliases:["+mine","+chop","+hunt","+farm"],
     aliasesUsage:["+mine","+chop","+hunt","+farm"],
     aliasesDescription:["Gather minerals","Chop down trees","Hunt animals","Farm resources"],
@@ -24,27 +25,41 @@ module.exports = {
                 energyCost = yieldMaps[command][action].energyCost
             }
             if(energyCost != null){
-                if(player.energy >= energyCost){
+                if(player.energy > energyCost){
                     if(player.gear.includes(action) > 0){
                         var gearIndex = player.gear.indexOf(action)
+                        var gearRank = player.toolLevel[gearIndex]
                         player.energy -= energyCost        
                         var maximumYield = 0
                         for(var resource in yieldMaps[command][action].resources){
-                            maximumYield += Math.floor(yieldMaps[command][action].resources[resource][1] * player.toolLevel[gearIndex])
+                            if(yieldMaps[command][action].resources[resource].chance[gearRank - 1] > 0){
+                                maximumYield += Math.floor(yieldMaps[command][action].resources[resource].minMax[1] * player.toolLevel[gearIndex])
+                            }
                         }
                         var currentCapacity = 0
                         for(var type in player.resources){
                             currentCapacity += player.resources[type]
                         }
                         if(currentCapacity + maximumYield <= tools.getPlayerStorage(player)){
+                            var structureRank = tools.cityHasStructure(dominion,resourceStructureID).level
+                            if(!structureRank){
+                                structureRank = 1
+                            }
                             var resourceYield = {}
-                            for(var resources in yieldMaps[command][action].resources){
-                                resourceYield[resources] = Math.floor(tools.getRandom(player.toolLevel[gearIndex] * yieldMaps[command][action].resources[resources][0],player.toolLevel[gearIndex] * yieldMaps[command][action].resources[resources][1]))
+                            for(var resource in yieldMaps[command][action].resources){
+                                if(Math.random() <= yieldMaps[command][action].resources[resource].chance[gearRank - 1]){
+                                    resourceYield[resource] = Math.floor(tools.getRandom(yieldMaps[command][action].resources[resource].minMax[0],yieldMaps[command][action].resources[resource].minMax[1])) * structureRank
+                                }                              
                             }
                             embed.setTitle(player.name + "'s " + action.capitalize() + " Result: (" + energyCost + " energy spent)")
                             for(var type in resourceYield){
-                                player.resources[type] += resourceYield[type]
-                                embed.addField(type.capitalize(),"```" + resourceYield[type] + "```",true)
+                                if(resourceYield[type] > 0){
+                                    if(!player.resources[type]){
+                                        player.resources[type] = 0
+                                    }
+                                    player.resources[type] += resourceYield[type]
+                                    embed.addField(type.capitalize(),"```" + resourceYield[type] + "```",true)
+                                }   
                             }
                             if(player.toolDurability[gearIndex] != -1){
                                 player.toolDurability[gearIndex]--
@@ -77,9 +92,15 @@ module.exports = {
                         tools.outputEmbed(message.channel,embed,player)
                     }
                 } else {
-                    embed.setColor([255,0,0])
-                    embed.addField("Out of Energy",player.name + " need more energy before you preform an action (" + player.energy + "/" + energyCost +")")
-                    tools.outputEmbed(message.channel,embed,player)
+                    if(player.energy == energyCost){
+                        embed.setColor([255,0,0])
+                        embed.addField("Warning",player.name + " would pass out from exhaustion if they were to " + command )
+                        tools.outputEmbed(message.channel,embed,player)
+                    } else {
+                        embed.setColor([255,0,0])
+                        embed.addField("Out of Energy",player.name + " needs more energy in order to " + command + " (" + player.energy + "/" + energyCost +")")
+                        tools.outputEmbed(message.channel,embed,player)
+                    }  
                 }
             } else {
                 embed.setColor([255,0,0])

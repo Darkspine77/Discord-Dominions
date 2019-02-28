@@ -1,6 +1,7 @@
 module.exports = {
     fullAuth:true,
-    takaeStructureData:true,
+    needEnergy:true,
+    takeStructureData:true,
     name:"+build",
     description:"Build a structure in the city of the dominion the command is executed in\nList all structures that can be built",
     usage:"+build (structure) (x-coordinate) (y-coordinate)\n+build (intent)",
@@ -80,8 +81,10 @@ module.exports = {
                         embed.addField(structure.capitalize() + " (" + structure +")","Costs:\n" + costString)
                     }
                     tools.outputEmbed(message.channel,embed,player)
+                } else {
+                    tools.commandError(this,embed,player,message)
                 }
-            }
+            } 
         }
     }
 }

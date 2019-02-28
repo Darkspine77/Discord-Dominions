@@ -21,11 +21,14 @@ module.exports = {
         }
         embed.setTitle("Actions " + player.name.capitalize() + " Can Do")
         for(var cmd in ableActions){
-            var variantString = "```"
+            var variantString = ""
             for(var variant of ableActions[cmd]){
                 variantString += variant + "\n"
             }
-            embed.addField(cmd,variantString + "```")
+            if(variantString != ""){
+                variantString = "```" + variantString + "```"
+            }
+            embed.addField(cmd,variantString)
         }
         tools.outputEmbed(message.channel,embed,player)
     }

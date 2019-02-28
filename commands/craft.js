@@ -1,8 +1,9 @@
 module.exports = {
     fullAuth:true,
     takeStructureData:true,
+    needEnergy:true,
     name:"+craft",
-    description:"Craft gear for an action\nCraft a resource\nList types of gear/resources that can be build",
+    description:"Craft gear for an action\nCraft a resource\nList types of gear/resources that can be crafted",
     usage:"+craft (action) (rank)\n+craft (resource) (amount)\n+craft (intent)",
     example:"+craft mining 2\n+craft iron 1\n+craft options",
     legalParameterCount:[2,3],
@@ -124,7 +125,7 @@ module.exports = {
                         validResources += "\n(" + resource + ")"
                     }
                     embed.setColor([255,0,0])
-                    embed.addField("Invalid Crafting Request","Valid gear to craft are:" + validActions +"\n----\nValid resources to craft for are:" + validResources)
+                    embed.addField("Invalid Crafting Request",input[1] + " is an invalid gear/resource to craft. Valid gear to craft are:" + validActions +"\n----\nValid resources to craft for are:" + validResources)
                     tools.outputEmbed(message.channel,embed,player) 
                 }
             } else if(input.length == 2){

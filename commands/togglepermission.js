@@ -9,7 +9,7 @@ module.exports = {
         if(tools.dominionAuthorization("canMakeRole",message,player,dominion,embed)){
             if(input[1] != "leader"){
                 if(dominion.roles[input[1]]){
-                    if(dominion.roles[input[1]].permissions[input[2]] == undefined){
+                    if(dominion.roles[input[1]].permissions[input[2]] != undefined){
                         if(dominion.roles[input[1]].permissions[input[2]]){
                             dominion.roles[input[1]].permissions[input[2]] = false
                         } else {
@@ -25,7 +25,7 @@ module.exports = {
                             validPermissions += "(" + permission + ")\n"
                         }
                         embed.setColor([255,0,0])
-                        embed.addField("Invalid Permission","Valid permissions are: " + validPermissions)
+                        embed.addField("Invalid Permission","Valid permissions are:\n" + validPermissions)
                         tools.outputEmbed(message.channel,embed,player)
                     }
                 } else {

@@ -9,9 +9,15 @@ module.exports = {
         if(player.confirming){
             switch(player.confirming.type){
                 case "store":
-                    tools.getPlayer(player.confirming.destination,function(targetPlayer){
+                    tools.getPlayer(player.confirming.donator,function(targetPlayer){
                         tools.getDominion(player.confirming.destination,function(targetDominion){
                             targetPlayer.resources[player.confirming.resource] -= player.confirming.amount
+                            if(targetPlayer.resources[player.confirming.resource] == 0){
+                                delete targetPlayer.resources[player.confirming.resource]
+                            }
+                            if(!targetDominion.resources[player.confirming.resource]){
+                                targetDominion.resources[player.confirming.resource] = 0
+                            }
                             targetDominion.resources[player.confirming.resource] += player.confirming.amount
                             // if(targetDominion.trading.active){
                             //     targetDominion.resources.gold -= player.confirming.repayment
@@ -21,12 +27,12 @@ module.exports = {
                             //         targetDominion.trading.buying[player.confirming.resource].wanted = 0
                             //     }
                             // }
-                            embed.addField("Transaction Successful",targetPlayer.name + " has stored" +player.confirming.amount + " " + player.confirming.resource + " in the dominion of " + tools.getDominionName(targetDominion.id))
+                            embed.addField("Transaction Successful",targetPlayer.name + " has stored " +player.confirming.amount + " " + player.confirming.resource + " in the dominion of " + tools.getDominionName(targetDominion.id))
                             // if(player.confirming.repayment > 0){
                             //     embed.addField("",player.name + " has received " + player.confirming.repayment + " gold in return")
                             // }
                             targetPlayer.confirming = null
-                            tools.updatePlayer(player,function(){
+                            tools.updatePlayer(targetPlayer,function(){
                                 tools.updateDominion(targetDominion,function(){
                                     tools.outputEmbed(message.channel,embed)
                                 })
@@ -63,7 +69,7 @@ module.exports = {
                         embed.addField("Deletion Successful","The dominion of " + tools.getDominionName(player.confirming.destination) + " has been deleted")
                         player.confirming = null
                         tools.updatePlayer(player,function(){
-                            tools.deleteDominion(player.confirming.destination,function(){
+                            tools.deleteDominion(targetDominion,function(){
                                 tools.outputEmbed(message.channel,embed)
                             })
                         })
@@ -72,22 +78,25 @@ module.exports = {
                 case "end":
                     tools.getPlayer(player.confirming.destination,function(targetPlayer){
                         embed.addField("Deletion Successful","The player " + targetPlayer.name + " has ended their journey")
-                        tools.deletePlayer(player.confirming.destination,function(){
+                        tools.deletePlayer(targetPlayer.confirming.destination,function(){
                             tools.outputEmbed(message.channel,embed)
                         })
                     })
                     break;
                 case "build":
                     tools.getDominion(player.confirming.destination,function(targetDominion){
-                        targetDominion.city[player.confirming.coordinates[0]][player.confirming.coordinates[1]] = player.confirming.desiredBuild.id
-                        targetDominion.cityHealth[player.confirming.coordinates[0]][player.confirming.coordinates[1]] = player.confirming.desiredBuild.health
+                        targetDominion.city[player.confirming.coordinates[0]][player.confirming.coordinates[1]] = {
+                            id:player.confirming.desiredBuild.id,
+                            health:player.confirming.desiredBuild.health,
+                            level:0
+                        }
                         for(var resource in player.confirming.desiredBuild.resources){
                             targetDominion.resources[resource] -= player.confirming.desiredBuild.resources[resource]
                         }
+                        embed.addField("Structure Built","A new " + player.confirming.name + " was built at coordinates (" + (player.confirming.coordinates[0] + 1) + "," + (player.confirming.coordinates[1] + 1) + ") in the city of the dominion of " + tools.getDominionName(targetDominion.id))
                         player.confirming = null
                         tools.updatePlayer(player,function(){
                             tools.updateDominion(targetDominion,function(){
-                                embed.addField("Structure Built","A new " + player.confirming.name + " was built at coordinates (" + (player.confirming.coordinates[0] + 1) + "," + (player.confirming.coordinates[1] + 1) + ") in the city of the dominion of " + tools.getDominionName(targetDominion.id))
                                 tools.outputEmbed(message.channel,embed,player)   
                             })
                         })
@@ -96,8 +105,14 @@ module.exports = {
                 case "take":
                     tools.getDominion(player.confirming.donator,function(targetDominion){
                         tools.getPlayer(player.confirming.destination,function(targetPlayer){
+                            if(!targetPlayer.resources[player.confirming.resource]){
+                                targetPlayer.resources[player.confirming.resource] = 0
+                            }
                             targetPlayer.resources[player.confirming.resource] += player.confirming.amount
                             targetDominion.resources[player.confirming.resource] -= player.confirming.amount
+                            if(targetDominion.resources[player.confirming.resource] == 0){
+                                delete targetDominion.resources[player.confirming.resource]
+                            }
                             embed.addField("Successful Resource Withdrawal",targetPlayer.name + " took " + player.confirming.amount + " " + player.confirming.resource + " from " + tools.getDominionName(targetDominion.id))
                             targetPlayer.confirming = null
                             tools.updatePlayer(targetPlayer,function(){

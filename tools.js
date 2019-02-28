@@ -8,13 +8,6 @@ function createPlayer(user){
             id:user.id,
             lastAction:now.getTime(),
             resources:{
-                coal:0,
-                iron:0,
-                ironOre:0,
-                stone:0,
-                crystals:0,
-                food:0,
-                lumber:0,
                 gold:0
             },
             followers:0,
@@ -41,13 +34,15 @@ module.exports = {
     fs:null,
     structureData:null,
     prettyms:null,
-    initialize: function(firebaseI,clientI,versionI,fsI,structureDataI,prettymsI){
+    cmdCount:null,
+    initialize: function(cmdCountI,firebaseI,clientI,versionI,fsI,structureDataI,prettymsI){
         firebase = firebaseI
         client = clientI;
         version = versionI;
         fs = fsI;
         structureData = structureDataI
-        prettyms = prettymsI
+        prettyms = prettymsI,
+        cmdCount = cmdCountI
     },
     getDominionName: function (id){
         return client.guilds.get(id).name
@@ -146,10 +141,10 @@ module.exports = {
         var storage = 0
         for(var x in dominion.city){
             for(var y in dominion.city[x]){
-                if(dominion.city[x][y] == 8){
+                if(dominion.city[x][y].id == 8){
                     storage += 200
                 }
-                if(dominion.city[x][y] == 1){
+                if(dominion.city[x][y].id == 1){
                     storage += 1000
                 }
             } 
@@ -163,10 +158,10 @@ module.exports = {
         var capacity = 0
         for(var x in dominion.city){
             for(var y in dominion.city[x]){
-                if(dominion.city[x][y] == 1){
+                if(dominion.city[x][y].id == 1){
                     capacity += 5
                 }
-                if(dominion.city[x][y] == 9){
+                if(dominion.city[x][y].id == 9){
                     capacity += 10
                 }
             } 
@@ -251,8 +246,8 @@ module.exports = {
         } else {
             embed.setFooter("Discord Dominions v" + version)
         }
-        if(scroll){
-            embed.setFooter("Discord Dominions v" + version + "| Scroll Window")
+        if(scroll == "help"){
+            embed.setFooter("Discord Dominions v" + version + "| Scroll Window | Help | Command #1/" + cmdCount)
             channel.send("",embed).then(message => {
                 message.react("⬅").then(() =>{
                     message.react("➡")
@@ -263,9 +258,13 @@ module.exports = {
         }   
     },
     cityHasStructure: function(dominion,structureID){
-        for(var row in dominion.city){
-            if(dominion.city[row].includes(structureID)){
-                return true
+        for(var x in dominion.city){
+            for(var y in dominion.city[x]){
+                if(dominion.city[x][y] != 0){
+                    if(dominion.city[x][y].id == structureID){
+                        return dominion.city[x][y]
+                    }
+                }
             }
         }
         return false
@@ -294,11 +293,26 @@ module.exports = {
             return false
         }
     },
+    commandError: function (command,embed,player,message){
+        embed.setColor([255,0,0])
+        var field = {}
+        embed.setTitle("Invalid Use of Command: " + message.content.split(" ")[0])
+        if(!command.name.multiCommand){
+            field.name = command.name
+            field.value = ""
+            for(var i in command.description.split("\n")){
+                field.value += "\n\n**Example #" + (1+parseInt(i)) +":**\n`" + command.example.split("\n")[i] + "`\n" + command.description.split("\n")[i] + "\nUsage:`" + command.usage.split("\n")[i] +"`" 
+            } 
+            embed.addField(field.name,field.value)         
+        }
+        this.outputEmbed(message.channel,embed,player)
+    },
     createDominion: function (guild,user,channelID){
         var playerData = firebase.database().ref("players/" + user.id);
         playerData.once('value').then(function(playerSnapshot) {
             var now = new Date();
             var dominions = firebase.database().ref("dominions/" + guild.id);
+            var city
             guild.createRole({
                 name:"Dominion Leader",
                 color:[255,189,27] 
@@ -306,14 +320,7 @@ module.exports = {
                 var newDominion = {
                     villagerPopulation:0,
                     resources:{     
-                        coal:0,
-                        gold:0,
-                        stone:0,
-                        iron:0,
-                        crystals:0,
-                        food:0,
-                        lumber:0,
-                        
+                        gold:0,                        
                     },
                     roles:{
                         leader:{
@@ -326,33 +333,26 @@ module.exports = {
                     trading:{
                         active:false
                     },
-                    city:[
-                        [0,0,0,0,0,0,0,0,0],
-                        [0,0,0,0,0,0,0,0,0],
-                        [0,0,0,0,0,0,0,0,0],
-                        [0,0,0,0,0,0,0,0,0],
-                        [0,0,0,0,1,0,0,0,0],
-                        [0,0,0,0,0,0,0,0,0],
-                        [0,0,0,0,0,0,0,0,0],
-                        [0,0,0,0,0,0,0,0,0],
-                        [0,0,0,0,0,0,0,0,0]
-                    ],
-                    cityHealth:[
-                        [0,0,0,0,0,0,0,0,0],
-                        [0,0,0,0,0,0,0,0,0],
-                        [0,0,0,0,0,0,0,0,0],
-                        [0,0,0,0,0,0,0,0,0],
-                        [0,0,0,0,10,0,0,0,0],
-                        [0,0,0,0,0,0,0,0,0],
-                        [0,0,0,0,0,0,0,0,0],
-                        [0,0,0,0,0,0,0,0,0],
-                        [0,0,0,0,0,0,0,0,0]
-                    ],
+                    city:[],
                     military:[0,0,0,0,0,0,0,0,0,0],
                     id:guild.id,
                     owner:user.id,
                     dob:now.getTime(),
                     legalChannels:[channelID]
+                }
+                for(var i = 0;i<9;i++){
+                    newDominion.city[i] = []
+                    for(var j = 0;j<9;j++){
+                        if(j == 4 && i == 4){
+                            newDominion.city[i][j] = {
+                                id:1,
+                                health:10,
+                                level:0
+                            }
+                        } else {
+                            newDominion.city[i][j] = 0
+                        }
+                    }  
                 }
                 if(playerSnapshot.val() == null){
                     createPlayer(user)
