@@ -171,49 +171,55 @@ client.on('message', message => {
                             var command = commands[commandString]
                             if(command.legalParameterCount.includes(input.length)){
                                 if(command.fullAuth){
-                                    if((command.needEnergy && player.energy >= 1) || !command.needEnergy){
-                                        if(dominion != null && player != null){
-                                            var now = new Date();
-                                            if(now.getTime() - player.lastAction >= 300000 && player.energy != player.energyCap){
-                                                var energyGain = Math.floor((now.getTime() - player.lastAction)/300000)
-                                                if(player.energy + energyGain > player.energyCap){
-                                                    energyGain = player.energyCap - player.energy
-                                                    player.energy = player.energyCap
-                                                } else {
-                                                    player.energy += energyGain
-                                                }
-                                                player.lastAction = now.getTime()
-                                                tools.updatePlayer(player,function(){
+                                    if(dominion != null && player != null){
+                                        var now = new Date();
+                                        if(now.getTime() - player.lastAction >= 300000 && player.energy != player.energyCap){
+                                            var energyGain = Math.floor((now.getTime() - player.lastAction)/300000)
+                                            if(player.energy + energyGain > player.energyCap){
+                                                energyGain = player.energyCap - player.energy
+                                                player.energy = player.energyCap
+                                            } else {
+                                                player.energy += energyGain
+                                            }
+                                            player.lastAction = now.getTime()
+                                            tools.updatePlayer(player,function(){
+                                                if((command.needEnergy && player.energy >= 1) || !command.needEnergy){
                                                     embed.addField("Gained Energy","[You gained " + energyGain + " energy!](https://discordapp.com/channels/" + message.guild.id + "/" + message.channel.id +")")
                                                     if(command.takeStructureData){
                                                         command.run(structureData,tools,input,dominion,player,message,embed)
                                                     } else {
                                                         command.run(tools,input,dominion,player,message,embed)
                                                     }
-                                                })
-                                            } else {
+                                                } else {
+                                                    embed.setColor([255,0,0])
+                                                    embed.addField("Passed Out","You need at least 1 energy to preform this action")
+                                                    tools.outputEmbed(message.channel,embed,player)
+                                                }
+                                            })
+                                        } else {
+                                            if((command.needEnergy && player.energy >= 1) || !command.needEnergy){
                                                 if(command.takeStructureData){
                                                     command.run(structureData,tools,input,dominion,player,message,embed)
                                                 } else {
                                                     command.run(tools,input,dominion,player,message,embed)
                                                 }
-                                            }
-                                        } else {
-                                            if(dominion == null){
+                                            } else {
                                                 embed.setColor([255,0,0])
-                                                embed.addField("Error","A dominion must be started in this server before this command can be used here. Have the server owner do the command '+claim' in the channel that will be used for this bots functions.",true)
+                                                embed.addField("Passed Out","You need at least 1 energy to preform this action")
+                                                tools.outputEmbed(message.channel,embed,player)
                                             }
-                                            if(player == null){
-                                                embed.setColor([255,0,0])
-                                                embed.addField("Error","No player account exists for " + message.author.username +". Please do +start",true)
-                                            }
-                                            tools.outputEmbed(message.channel,embed,player)
-                                        } 
+                                        }
                                     } else {
-                                        embed.setColor([255,0,0])
-                                        embed.addField("Passed Out","You need at least 1 energy to preform this action")
+                                        if(dominion == null){
+                                            embed.setColor([255,0,0])
+                                            embed.addField("Error","A dominion must be started in this server before this command can be used here. Have the server owner do the command '+claim' in the channel that will be used for this bots functions.",true)
+                                        }
+                                        if(player == null){
+                                            embed.setColor([255,0,0])
+                                            embed.addField("Error","No player account exists for " + message.author.username +". Please do +start",true)
+                                        }
                                         tools.outputEmbed(message.channel,embed,player)
-                                    }           
+                                    }            
                                 } else {
                                     command.run(tools,input,message,embed)
                                 }

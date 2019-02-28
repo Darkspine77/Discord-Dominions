@@ -94,7 +94,7 @@ module.exports = {
                 } else {
                     if(player.energy == energyCost){
                         embed.setColor([255,0,0])
-                        embed.addField("Warning",player.name + " would pass out from exhaustion if they were to " + command )
+                        embed.addField("Warning",player.name + " would pass out from exhaustion if they were to " + command)
                         tools.outputEmbed(message.channel,embed,player)
                     } else {
                         embed.setColor([255,0,0])
