@@ -190,6 +190,37 @@ module.exports = {
         embed.setThumbnail(channel.guild.splashURL)
         callback(embed)
     },
+    listDominionTrades: function(dominion,channel,embed,callback){
+        var trades = {}
+        for(var sale in dominion.trading.selling){
+            trades[sale] = {}
+            trades[sale].selling = dominion.trading.selling[sale]
+        }
+        for(var buying in dominion.trading.buying){
+            if(!trades[buying]){
+                trades[buying] = {}
+            }
+            trades[buying].buying = dominion.trading.buying[buying]
+        }
+        var valid = false
+        for(var resource in trades){
+            valid = true
+            var title = resource.capitalize()
+            var content = ""
+            if(trades[resource].selling){
+                content += "Amount Wanted To Sell: " + trades[resource].selling.amount + "\nSelling " + trades[resource].selling.exchange.amount + " per " + trades[resource].selling.exchange.value + " Gold"
+            }
+            if(trades[resource].buying){          
+                content += "Amount Wanted To Buy: " + trades[resource].buying.amount + "\nBuying " + trades[resource].buying.exchange.amount + " per " + trades[resource].buying.exchange.value + " Gold"
+            }
+            embed.addField(title,content,true)
+        }
+        embed.setTitle(this.getDominionName(dominion.id) + "'s Active Trades")
+        if(!valid){
+            embed.addField("No Trades",this.getDominionName(dominion.id) + " is not buying or selling any resources")
+        }
+        this.outputEmbed(channel,embed)
+    },
     drawCity: function (dominion,channel,embed,callback){
         var out = fs.createWriteStream("./cities/" + dominion.id + '.jpg')
         var canvas = createCanvas(290, 290)

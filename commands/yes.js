@@ -141,17 +141,17 @@ module.exports = {
                         if(targetDominion.trading.buying == undefined){
                             targetDominion.trading.buying = {}
                         }
-                        targetDominion.trading.buying[player.confirming.resource] ={
-                            wanted:player.confirming.totalAmount,
+                        targetDominion.trading.buying[player.confirming.resource] = {
+                            amount:player.confirming.totalAmount,
                             exchange:{
                                 amount:player.confirming.minResource,
                                 value:player.confirming.minGold
                             }
                         }
-                        embed.addField("Request Successful",tools.getDominionName(dominion.id)+ " is now giving " + minGold + " gold to players who sell it at least " + minResource + " " + input[1])
+                        embed.addField("Request Successful",tools.getDominionName(dominion.id)+ " is now buying a total of " + player.confirming.totalAmount + " " + player.confirming.resource + " at a rate of " + player.confirming.minGold + " gold per " + player.confirming.minResource + " " + player.confirming.resource)
                         player.confirming = null
                         tools.updateDominion(targetDominion,function(){
-                            tools.updatePlayer(targetPlayer,function(){
+                            tools.updatePlayer(player,function(){
                                 tools.outputEmbed(message.channel,embed)
                             })
                         })
@@ -162,21 +162,21 @@ module.exports = {
                             targetDominion.trading.selling = {}
                         }
                         targetDominion.trading.selling[player.confirming.resource] ={
-                            wanted:player.confirming.totalAmount,
+                            amount:player.confirming.totalAmount,
                             exchange:{
                                 amount:player.confirming.minResource,
                                 value:player.confirming.minGold
                             }
                         }
-                        embed.addField("Offer Successful",tools.getDominionName(dominion.id)+ " is now selling " + minResource + " " + input[1] + " for " + minGold + " gold")
+                        embed.addField("Request Successful",tools.getDominionName(dominion.id)+ " is now selling a total of " + player.confirming.totalAmount + " " + player.confirming.resource + " at a rate of " + player.confirming.minGold + " gold per " + player.confirming.minResource + " " + player.confirming.resource)
                         player.confirming = null
                         tools.updateDominion(targetDominion,function(){
-                            tools.updatePlayer(targetPlayer,function(){
+                            tools.updatePlayer(player,function(){
                                 tools.outputEmbed(message.channel,embed)
                             })
                         })
                     })
-                break;
+                    break;
             }
         } else {
             embed.setColor([255,0,0])

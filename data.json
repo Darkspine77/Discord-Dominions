@@ -3,24 +3,26 @@
      "mining":{  
         "structureReq":4,
         "rank":{  
-           "1":{  
+           "2":{  
               "resources":{  
-                 "lumber":10,
-                 "stone":30
+                 "lumber":5,
+                 "stone":20,
+                 "twine":5
               },
-              "durability":25
+              "durability":10
            }
         }
      },
      "lumberjacking":{  
         "structureReq":4,
         "rank":{  
-           "1":{  
+           "2":{  
               "resources":{  
-                 "lumber":20,
-                 "stone":30
+                "lumber":5,
+                "stone":20,
+                "twine":5
               },
-              "durability":25
+              "durability":10
            }
         }
      },
@@ -29,21 +31,25 @@
         "rank":{  
            "1":{  
               "resources":{  
-                 "lumber":50
+                 "lumber":50,
+                 "twine":15,
+                 "stone":10
               },
-              "durability":25
+              "durability":10
            }
         }
      },
      "construction":{  
         "structureReq":4,
         "rank":{  
-           "1":{  
+           "2":{  
               "resources":{  
-                 "lumber":100,
-                 "stone":100
+                 "lumber":30,
+                 "stone":30,
+                 "twine":10,
+                 "iron":5
               },
-              "durability":10
+              "durability":5
            }
         }
      },
@@ -52,10 +58,11 @@
         "rank":{  
            "1":{  
               "resources":{  
-                 "lumber":20,
-                 "stone":150
+                 "lumber":5,
+                 "stone":15,
+                 "twine":10
               },
-              "durability":15
+              "durability":10
            }
         }
      },
@@ -64,10 +71,9 @@
         "rank":{  
            "1":{  
               "resources":{  
-                 "lumber":50,
-                 "iron":10
+                 "twine":25
               },
-              "durability":30
+              "durability":20
            }
         }
      },
@@ -76,10 +82,11 @@
         "rank":{  
            "1":{  
               "resources":{  
-                 "lumber":50,
+                 "twine":5,
+                 "lumber":5,
                  "iron":10
               },
-              "durability":30
+              "durability":10
            }
         }
      }
@@ -114,7 +121,13 @@
            "ironOre":1,
            "coal":2
         }
-     }
+     },
+     "fiber":{  
+      "structureReq":7,
+      "resources":{  
+         "leaves":10
+      }
+   }
   },
   "gears":[  
      "mining",
@@ -198,7 +211,7 @@
                 "chance":[0.25,0.30,0.35,0.40,0.45]
               },
               "leaves":{
-                "minMax":[1,6],
+                "minMax":[1,11],
                 "chance":[0.15,0.125,0.10,0.075,0.05]
               }
            },

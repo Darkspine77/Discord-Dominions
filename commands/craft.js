@@ -125,7 +125,7 @@ module.exports = {
                         validResources += "\n(" + resource + ")"
                     }
                     embed.setColor([255,0,0])
-                    embed.addField("Invalid Crafting Request",input[1] + " is an invalid gear/resource to craft. Valid gear to craft are:" + validActions +"\n----\nValid resources to craft for are:" + validResources)
+                    embed.addField("Invalid Crafting Request",input[1] + " is an invalid gear/resource to craft.\nValid gear to craft are:" + validActions +"\n----\nValid resources to craft for are:" + validResources)
                     tools.outputEmbed(message.channel,embed,player) 
                 }
             } else if(input.length == 2){
@@ -144,8 +144,10 @@ module.exports = {
                         embed.addField(action.capitalize() + " (" + action +")","\n" + rankString)
                     }
                     tools.outputEmbed(message.channel,embed,player)
+                } else {
+                    tools.commandError(this,embed,player,message)
                 }
-            }
+            } 
         }
     }
 }

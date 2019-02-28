@@ -1,10 +1,10 @@
 module.exports = {
     fullAuth:true,
     takeStructureData:true,
-    name:"+request",
-    description:"Set a request at a dominion's trading post",
-    usage:"+request (total amount) (resource) (minimum gold per transaction) (minimum resource per transaction)",
-    example:"+request 20 iron 1 5",
+    name:"+offer",
+    description:"Set a offer at a dominion's trading post",
+    usage:"+offer (total amount) (resource) (minimum gold per transaction) (minimum resource per transaction)",
+    example:"+offer 20 lumber 1 5",
     legalParameterCount:[5],
     run: function(structureData,tools,input,dominion,player,message,embed){
         if(tools.dominionAuthorization("canManageTrading",message,player,dominion,embed)){
@@ -20,29 +20,29 @@ module.exports = {
                             for(var resource in dominion.resources){
                                 dominionCurrentStorage += dominion.resources[resource]
                             }
-                            if(dominionCurrentStorage + totalAmount <= tools.getDominionStorage(dominion)){
-                                if(dominion.resources.gold >= (totalAmount/minResource) * minGold){
+                            if(dominionCurrentStorage + minGold <= tools.getDominionStorage(dominion)){
+                                if(dominion.resources[input[2]] >= totalAmount){
                                     player.confirming = {
-                                        type:"request",
+                                        type:"offer",
                                         totalAmount:totalAmount,
                                         minGold:minGold,
                                         minResource:minResource,
                                         resource:input[2],
                                         destination:dominion.id
                                     }
-                                    embed.addField("Trading Request",tools.getDominionName(dominion.id) + " will be buying a total of " + totalAmount + " " + input[2] + " at a rate of " + minGold + " gold per " + minResource + " " + input[2])
+                                    embed.addField("Trading Offer",tools.getDominionName(dominion.id) + " will be selling " + totalAmount + " " + input[2] + " at a rate of " + minResource + " " + input[2] + " for " + minGold + " gold")
                                     embed.addField("Confirmation",player.name + " must type +yes to confirm this action or +no to decline"); 
                                     tools.updatePlayer(player,function(){
                                         tools.outputEmbed(message.channel,embed,player)     
                                     })
                                 } else {
                                     embed.setColor([255,0,0])
-                                    embed.addField("Invalid Dominion Gold Reserves",tools.getDominionName(dominion.id) + " does not have enough gold to allow transactions at this exchange rate")
+                                    embed.addField("Invalid Dominion " + input[2].capitalize() + " Reserves",tools.getDominionName(dominion.id) + " does not have " + input[2] + " " + input[2] + " to offer")
                                     tools.outputEmbed(message.channel,embed,player) 
                                 }
                             } else {
                                 embed.setColor([255,0,0])
-                                embed.addField("Invalid Dominion Storage",tools.getDominionName(dominion.id) + " does not have enough storage for " + input[1] + " " + input[2])
+                                embed.addField("Invalid Dominion Storage",tools.getDominionName(dominion.id) + " does not have enough storage for " + input[1] + " gold")
                                 tools.outputEmbed(message.channel,embed,player) 
                             }
                         } else {
@@ -57,7 +57,7 @@ module.exports = {
                     }   
                 } else {
                     embed.setColor([255,0,0])
-                    embed.addField("Invalid Amount","Please use positive numbers when indicating a total number of a resource you would like to request")
+                    embed.addField("Invalid Amount","Please use positive numbers when indicating a total number of a resource you would like to offer")
                     tools.outputEmbed(message.channel,embed,player)
                 }
             } else {
@@ -66,7 +66,7 @@ module.exports = {
                     validResources += "(" + resource + ")\n"
                 }
                 embed.setColor([255,0,0])
-                embed.addField("Invalid Resource",input[2] + " is not a valid resource to request. Valid resources to request are:\n" + validResources)
+                embed.addField("Invalid Resource",input[2] + " is not a valid resource to offer. Valid resources to offer are:\n" + validResources)
                 tools.outputEmbed(message.channel,embed,player)   
             }
         }
