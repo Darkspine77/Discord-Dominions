@@ -1,14 +1,19 @@
 {
   "journeyYield":{
       "events":{
-         "dungeon":{
-            "chance":[0.2,0.3,0.4,0.5,0.6],
-            "challenges":{
-               "fighting":{
+         "goblin":{
+            "title":"Encountered a Wandering Goblin Warrior",
+            "chance":[1,0.8,0.6,0.4,0.2],
+            "challenges":[
+               {
+                  "winMessage":" slayed the Goblin Warrior",
+                  "loseMessage":" was unable to defeat the Goblin Warrior",
+                  "failMessage":", being unarmed, was quickly defeated and forced to flee",
+                  "gear":"fighting",
                   "threshold":[1,2],
                   "rewards":[
                      {
-                        "chance":[0.2,0.35,0.5,0.65,0.8],
+                        "chance":[1,0.35,0.5,0.65,0.8],
                         "type":"GAINRESOURCE",
                         "resource":"iron",
                         "amount":[1,2]
@@ -21,18 +26,22 @@
                         "amount":[1,5]
                         }
                   ]
+               },
+               {
+                  "winMessage":" was able to defend themselves from attack",
+                  "loseMessage":" was not able to withstand the strength of the Goblin Warrior",
+                  "failMessage":"'s unprotected body was wounded in battle",
+                  "gear":"protection",
+                  "threshold":[1,1],
+                  "punishments":[
+                        {
+                        "chance":[0.78,0.76,0.74,0.72,0.7], 
+                        "type":"LOSEENERGY",
+                        "amount":[1,2]
+                        }
+                  ]
                }
-            },
-            "protection":{
-               "threshold":[1,1],
-               "rewards":[],
-               "punishments":[
-                     {
-                     "type":"LOSEENERGY",
-                     "amount":[1,2]
-                     }
-               ]
-            }
+            ]
          }
       }
   },
@@ -121,11 +130,23 @@
               "resources":{  
                  "twine":5,
                  "lumber":5,
-                 "iron":10
+                 "iron":5
               },
               "durability":10
            }
         }
+     },
+     "protection":{
+         "structureReq":4,
+         "rank":{  
+            "1":{  
+               "resources":{  
+                  "twine":10,
+                  "iron":15
+               },
+               "durability":10
+            }
+         }
      }
   },
   "gearUseMap":{  
@@ -173,7 +194,8 @@
      "construction",
      "fighting",
      "exploring",
-     "hunting"
+     "hunting",
+     "protection"
   ],
   "resources":[  
     "gold",

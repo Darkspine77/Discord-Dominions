@@ -274,7 +274,7 @@ module.exports = {
         }
         if(player){
             if(player.energy != player.energyCap && (now.getTime() - player.lastAction < 120000)){
-                embed.setFooter("Discord Dominions v" + version + "| Energy: (" + player.energy + "/" + player.energyCap + ") Recharges in " + prettyms(300000 - (now.getTime() - player.lastAction)) + "...")
+                embed.setFooter("Discord Dominions v" + version + "| Energy: (" + player.energy + "/" + player.energyCap + ") Recharges in " + prettyms(120000 - (now.getTime() - player.lastAction)) + "...")
             } else {
                 embed.setFooter("Discord Dominions v" + version + "| Energy: (" + player.energy + "/" + player.energyCap + ")")
             }
