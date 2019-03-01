@@ -7,7 +7,7 @@ module.exports = {
     aliasesDescription:["Gather minerals","Chop down trees","Hunt animals","Farm resources"],
     aliasesExample:["+mine","+chop","+hunt","+farm"],
     multiCommand:true,
-    name:"Gather",
+    name:"gather",
     legalParameterCount:[1,2],
     run: function(structureData,tools,input,dominion,player,message,embed){
         var command = input[0].slice(1).toLocaleLowerCase()

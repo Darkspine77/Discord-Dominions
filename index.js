@@ -162,7 +162,9 @@ client.on('message', message => {
                     } else {
                         for(var command in commands){
                             if(commands[command].aliases){
-                                if(commands[command].aliases.includes(input[0])){
+                                if(commandString == commands[command].name){
+                                    commandString = null
+                                } else if(commands[command].aliases.includes(input[0])){
                                     commandString = commands[command].name
                                 }
                             }
