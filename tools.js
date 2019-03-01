@@ -15,8 +15,8 @@ function createPlayer(user){
             gear:["mining","lumberjacking","construction"],
             toolLevel:[1,1,1],
             toolDurability:[-1,-1,-1],
-            energy:10,
-            energyCap:10,
+            energy:15,
+            energyCap:15,
             dob:now.getTime(),
             prefix:"+"
         }
@@ -273,7 +273,7 @@ module.exports = {
             embed.setColor([114,137,218])
         }
         if(player){
-            if(player.energy != player.energyCap){
+            if(player.energy != player.energyCap && (now.getTime() - player.lastAction < 120000)){
                 embed.setFooter("Discord Dominions v" + version + "| Energy: (" + player.energy + "/" + player.energyCap + ") Recharges in " + prettyms(300000 - (now.getTime() - player.lastAction)) + "...")
             } else {
                 embed.setFooter("Discord Dominions v" + version + "| Energy: (" + player.energy + "/" + player.energyCap + ")")

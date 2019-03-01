@@ -3,7 +3,7 @@ module.exports = {
     needEnergy:true,
     takeStructureData:true,
     name:"+explore",
-    description:"Explore the overworld to have a random encounter",
+    description:"Explore the overworld for random encounters",
     usage:"+explore",
     example:"+explore",
     legalParameterCount:[1],

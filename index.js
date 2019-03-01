@@ -175,8 +175,8 @@ client.on('message', message => {
                                 if(command.fullAuth){
                                     if(dominion != null && player != null){
                                         var now = new Date();
-                                        if(now.getTime() - player.lastAction >= 150000 && player.energy != player.energyCap){
-                                            var energyGain = Math.floor((now.getTime() - player.lastAction)/150000)
+                                        if(now.getTime() - player.lastAction >= 120000 && player.energy != player.energyCap){
+                                            var energyGain = Math.floor((now.getTime() - player.lastAction)/120000)
                                             if(player.energy + energyGain > player.energyCap){
                                                 energyGain = player.energyCap - player.energy
                                                 player.energy = player.energyCap

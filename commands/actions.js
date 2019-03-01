@@ -14,8 +14,8 @@ module.exports = {
                 if(ableActions[cmd] == undefined){
                     ableActions[cmd] = []
                 }
-                for(var parameters of actions[cmd]){
-                    ableActions[cmd].push(cmd + " " + parameters)
+                for(var version of actions[cmd]){
+                    ableActions[cmd].push(version)
                 }
             }
         }
@@ -26,9 +26,11 @@ module.exports = {
                 variantString += variant + "\n"
             }
             if(variantString != ""){
-                variantString = "```" + variantString + "```"
+                variantString = variantString + "```"
+            } else {
+                variantString = cmd + "```"
             }
-            embed.addField(cmd,variantString)
+            embed.addField(cmd,"```Uses: " + variantString)
         }
         tools.outputEmbed(message.channel,embed,player)
     }
