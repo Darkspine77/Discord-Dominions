@@ -13,7 +13,7 @@
                   "threshold":[1,2],
                   "rewards":[
                      {
-                        "chance":[1,0.35,0.5,0.65,0.8],
+                        "chance":[30,0.35,0.5,0.65,0.8],
                         "type":"GAINRESOURCE",
                         "resource":"iron",
                         "amount":[1,2]
@@ -53,7 +53,7 @@
               "resources":{  
                  "lumber":5,
                  "stone":20,
-                 "twine":5
+                 "fiber":5
               },
               "durability":10
            }
@@ -66,7 +66,7 @@
               "resources":{  
                 "lumber":5,
                 "stone":20,
-                "twine":5
+                "fiber":5
               },
               "durability":10
            }
@@ -78,7 +78,7 @@
            "1":{  
               "resources":{  
                  "lumber":50,
-                 "twine":15,
+                 "fiber":15,
                  "stone":10
               },
               "durability":10
@@ -92,7 +92,7 @@
               "resources":{  
                  "lumber":30,
                  "stone":30,
-                 "twine":10,
+                 "fiber":10,
                  "iron":5
               },
               "durability":5
@@ -106,7 +106,7 @@
               "resources":{  
                  "lumber":5,
                  "stone":15,
-                 "twine":10
+                 "fiber":10
               },
               "durability":10
            }
@@ -117,7 +117,7 @@
         "rank":{  
            "1":{  
               "resources":{  
-                 "twine":25
+                 "fiber":25
               },
               "durability":20
            }
@@ -128,7 +128,7 @@
         "rank":{  
            "1":{  
               "resources":{  
-                 "twine":5,
+                 "fiber":5,
                  "lumber":5,
                  "iron":5
               },
@@ -141,7 +141,7 @@
          "rank":{  
             "1":{  
                "resources":{  
-                  "twine":10,
+                  "fiber":10,
                   "iron":15
                },
                "durability":10

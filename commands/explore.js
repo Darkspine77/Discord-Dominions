@@ -14,7 +14,7 @@ module.exports = {
             var journeyYields = structureData.journeyYield
             var journeyQueue = []
             for(var event in journeyYields.events){
-                if(Math.random() < journeyYields.events[event].chance[gearRank - 1]){
+                if(Math.random() <= journeyYields.events[event].chance[gearRank - 1]){
                     var field = {
                         title:journeyYields.events[event].title,
                         description:""
@@ -23,7 +23,7 @@ module.exports = {
                     for(var task of circumstances){
                         var succeeded = 0;
                         if(player.gear.indexOf(task.gear) != -1){
-                            if(player.toolLevel[player.gear.indexOf(task.gear)] >= Math.floor(tools.getRandom(task.threshold[0],task.threshold[1]))){
+                            if(player.toolLevel[player.gear.indexOf(task.gear)] >= Math.round(tools.getRandom(task.threshold[0],task.threshold[1]))){
                                 succeeded = 1
                             } else {
                                 succeeded = 2
@@ -40,55 +40,57 @@ module.exports = {
                             field.description += "\n\n" + player.name + task.failMessage
                             results = task.punishments
                         }
-                        //HERE
-                        for(var result in results){
-                            switch(result.type){
-                                case "GAINRESOURCE":
-                                    var resource;
-                                    if(result.resource == "RANDOM"){
-                                        while(!player.resources[resource]){
-                                            resource = structureData.resources[Math.floor(Math.random() * structureData.resources.length)]
-                                        }
-                                    } else {
-                                        resource = result.resource
+                        if(results){
+                            for(var result of results){
+                                if(!result.chance || Math.random() <= result.chance[player.toolLevel[player.gear.indexOf(task.gear)] - 1]){
+                                    switch(result.type){
+                                        case "GAINRESOURCE":
+                                            var resource;
+                                            if(result.resource == "RANDOM"){
+                                                while(!player.resources[resource]){
+                                                    resource = structureData.resources[Math.round(Math.random() * structureData.resources.length)]
+                                                }
+                                            } else {
+                                                resource = result.resource
+                                            }
+                                            var amount = Math.round(tools.getRandom(result.amount[0],result.amount[1]))
+                                            if(!player.resources[resource]){
+                                                player.resources[resource] = 0
+                                            }
+                                            player.resources[resource] += amount
+                                            field.description += "\nGained " + amount + " " + resource
+                                            break;
+                                        case "LOSERESOURCE":
+                                            var resource;
+                                            if(result.resource == "RANDOM"){
+                                                while(!player.resources[resource]){
+                                                    resource = structureData.resources[Math.round(Math.random() * structureData.resources.length)]
+                                                }
+                                            } else {
+                                                resource = result.resource
+                                            }
+                                            var amount = Math.round(tools.getRandom(result.amount[0],result.amount[1]))
+                                            if(player.resources[resource] - amount < 0){
+                                                amount = player.resources[resource]
+                                                delete player.resources[resource]
+                                            } else {
+                                                player.resources[resource] -= amount
+                                            }
+                                            field.description += "\nLost " + amount + " " + resource
+                                            break;
+                                        case "LOSEENERGY":
+                                            var amount = Math.round(tools.getRandom(result.amount[0],result.amount[1]))
+                                            if(player.energy - amount < 0){
+                                                amount = player.energy
+                                                player.energy = 0
+                                            } else {
+                                                player.energy -= amount
+                                            }
+                                            field.description += "\nLost " + amount + " energy"
+                                            break;
                                     }
-                                    var amount = Math.floor(tools.getRandom(result.amount[0],result.amount[1]))
-                                    if(!player.resources[resource]){
-                                        player.resources[resource] = 0
-                                    }
-                                    player.resources[resource] += amount
-                                    field.description += "\nGained " + amount + " " + resource
-                                    break;
-                                case "LOSERESOURCE":
-                                    var resource;
-                                    if(result.resource == "RANDOM"){
-                                        while(!player.resources[resource]){
-                                            resource = structureData.resources[Math.floor(Math.random() * structureData.resources.length)]
-                                        }
-                                    } else {
-                                        resource = result.resource
-                                    }
-                                    var amount = Math.floor(tools.getRandom(result.amount[0],result.amount[1]))
-                                    player.resources[resource] -= amount
-                                    if(resources[resource] - amount < 0){
-                                        amount = resources[resource]
-                                        resources[resource] = 0
-                                    } else {
-                                        resources[resource] -= amount
-                                    }
-                                    field.description += "\nLost " + amount + " " + resource
-                                    break;
-                                case "LOSEENERGY":
-                                    var amount = Math.floor(tools.getRandom(result.amount[0],result.amount[1]))
-                                    if(player.energy - amount < 0){
-                                        amount = player.energy
-                                        player.energy = 0
-                                    } else {
-                                        player.energy -= amount
-                                    }
-                                    field.description += "\nLost " + amount + " energy"
-                                    break;
-                            }
+                                }
+                            }         
                         }
                     }
                     journeyQueue.push(field)

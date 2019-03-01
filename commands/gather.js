@@ -33,7 +33,7 @@ module.exports = {
                         var maximumYield = 0
                         for(var resource in yieldMaps[command][action].resources){
                             if(yieldMaps[command][action].resources[resource].chance[gearRank - 1] > 0){
-                                maximumYield += Math.floor(yieldMaps[command][action].resources[resource].minMax[1] * player.toolLevel[gearIndex])
+                                maximumYield += Math.round(yieldMaps[command][action].resources[resource].minMax[1] * player.toolLevel[gearIndex])
                             }
                         }
                         var currentCapacity = 0
@@ -48,7 +48,7 @@ module.exports = {
                             var resourceYield = {}
                             for(var resource in yieldMaps[command][action].resources){
                                 if(Math.random() <= yieldMaps[command][action].resources[resource].chance[gearRank - 1]){
-                                    resourceYield[resource] = Math.floor(tools.getRandom(yieldMaps[command][action].resources[resource].minMax[0],yieldMaps[command][action].resources[resource].minMax[1])) * structureRank
+                                    resourceYield[resource] = Math.round(tools.getRandom(yieldMaps[command][action].resources[resource].minMax[0],yieldMaps[command][action].resources[resource].minMax[1])) * structureRank
                                 }                              
                             }
                             embed.setTitle(player.name + "'s " + action.capitalize() + " Result: (" + energyCost + " energy spent)")
