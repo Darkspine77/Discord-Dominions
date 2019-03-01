@@ -235,7 +235,11 @@ module.exports = {
             }
             for (let i = 0; i < 9; i++) {
                 for (let j = 0; j < 9; j++) {
-                    ctx.drawImage(sprites[structureData.buildingMap[dominion.city[i][j]]],i*32,j*32)
+                    if(dominion.city[i][j].id) {
+                        ctx.drawImage(sprites[structureData.buildingMap[dominion.city[i][j].id]],i*32,j*32)
+                    } else {
+                        ctx.drawImage(sprites[structureData.buildingMap[0]],i*32,j*32)
+                    }
                 }   
             }    
             ctx.beginPath()  
