@@ -30,7 +30,7 @@ module.exports = {
                     }
                 } else {
                     embed.setColor([255,0,0])
-                    embed.addField("Invalid Role","This role can not be removed as it does not exist")
+                    embed.addField("Invalid Role","This roles permissions can not be edited as it does not exist")
                     tools.outputEmbed(message.channel,embed,player)
                 }
             } else {
