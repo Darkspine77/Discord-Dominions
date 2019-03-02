@@ -18,9 +18,12 @@ module.exports = {
                         if(player.toolLevel[gearIndex] >= desiredBuild.buildLevel){                     
                             var cleared = true
                             for(var resource in desiredBuild.resources){
-                                if(dominion.resources[resource] <= desiredBuild.resources[resource]){
+                                if(!dominion.resources[resource] || dominion.resources[resource] < desiredBuild.resources[resource]){
                                     cleared = false
                                     embed.setColor([255,0,0])
+                                    if(!dominion.resources[resource]){
+                                        dominion.resources[resource] = 0
+                                    }
                                     embed.addField("Not Enough of Resource",tools.getDominionName(dominion.id) + " does not have enough " + resource + " to build a " + input[1] + " (" + dominion.resources[resource] + "/" + desiredBuild.resources[resource]+ ")")
                                 }
                             }

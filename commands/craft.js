@@ -30,8 +30,11 @@ module.exports = {
                         if(toolMap[input[1]].rank[input[2]]){
                             var cleared = true
                             for(var resource in toolMap[input[1]].rank[input[2]].resources){
-                                if(player.resources[resource] < toolMap[input[1]].rank[input[2]].resources[resource]){
+                                if(!player.resources[resource] || player.resources[resource] < toolMap[input[1]].rank[input[2]].resources[resource]){
                                     cleared = false                  
+                                    if(!player.resources[resource]){
+                                        player.resources[resource] = 0
+                                    }
                                     embed.addField("Not Enough of Resource",player.name + " does not have enough " + resource + " to craft rank " + input[2] + " " +  input[1] + " gear (" + player.resources[resource] + "/" + toolMap[input[1]].rank[input[2]].resources[resource] + ")")
                                 }
                             }
@@ -133,15 +136,22 @@ module.exports = {
                     for(var action in toolMap){
                         var rankString = ""
                         for(var rank in toolMap[action].rank){
-                            rankString += "\n-----\nRank: " +rank + "\n"
-                            var detailString = ""
+                            rankString += "\n\n**Rank:** " +rank + "\n"
+                            var detailString = "```"
                             for(var resource in toolMap[action].rank[rank].resources){
                                 detailString += "(" + resource.capitalize() + ": " + toolMap[action].rank[rank].resources[resource] + ")\n"
                             }
-                            detailString += "(Durability: " +toolMap[action].rank[rank].durability + ")"
+                            detailString += "(Durability: " +toolMap[action].rank[rank].durability + ")```"
                             rankString += detailString
                         }
                         embed.addField(action.capitalize() + " (" + action +")","\n" + rankString)
+                    }
+                    for(var resource in resourceMap){
+                        var recipieString = "```"
+                        for(var recipeResource in resourceMap[resource].resources){
+                            recipieString += "(" + recipeResource.capitalize() + ": " + resourceMap[resource].resources[recipeResource] + ")\n"
+                        }
+                        embed.addField(resource.capitalize() + " (" + resource +")","\n" + recipieString + "```")
                     }
                     tools.outputEmbed(message.channel,embed,player)
                 } else {

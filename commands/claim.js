@@ -21,7 +21,7 @@ module.exports = {
         } else {
             embed.setColor([255,0,0])
             embed.addField("Error","Only a server owner may claim a dominion",true)
-            tools.outputEmbed(message.channel,embed,player)
+            tools.outputEmbed(message.channel,embed)
         }
     }
 }
