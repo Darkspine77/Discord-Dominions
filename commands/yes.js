@@ -125,6 +125,9 @@ module.exports = {
                     break;
                 case "craftResources":
                         tools.getPlayer(player.confirming.destination,function(targetPlayer){
+                            if(!targetPlayer.resources[player.confirming.resource]){
+                                targetPlayer.resources[player.confirming.resource] = 0
+                            }
                             targetPlayer.resources[player.confirming.resource] += player.confirming.amount
                             for(var resource in player.confirming.expenses){
                                 targetPlayer.resources[resource] -= player.confirming.expenses[resource] * player.confirming.amount
